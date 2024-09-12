@@ -1776,7 +1776,8 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
                 std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
-                result->value = l->value <= r->value ? 1 : 0;
+                result->value = (l->value <= r->value) ? 1 : 0;
+                
                 return result;
             }
 
