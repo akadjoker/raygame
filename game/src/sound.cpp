@@ -101,7 +101,7 @@ u32 Core::MusicLoad(const std::string &path)
     if (!isReady)
         return -1;
     CoreMusic *music = loadMusic(path);
-    u32 id = musics.size() - 1;
+    u32 id = musics.size() ;
     return static_cast<u32>(id);
 }
 
@@ -127,6 +127,18 @@ void Core::cMusicStop(u32 id)
     if (music == nullptr)
         return;
     StopMusicStream(music->music);
+}
+
+void Core::cMusicUpdate(u32 id)
+{
+    if (!isReady)
+        return;
+    if (id < 0 || id >= musics.size())
+        return;
+    CoreMusic *music = musics[id];
+    if (music == nullptr)
+        return;
+    UpdateMusicStream(music->music);
 }
 
 void Core::cMusicPause(u32 id)
@@ -446,6 +458,19 @@ ExprPtr native_music_set_pitch(Context* ctx, int argc)
     return ctx->asNil();
 }
 
+ExprPtr native_music_update(Context* ctx, int argc)
+{
+    if (argc != 1)
+    {
+        ERROR("UpdateMusic requires (id) argument");
+        return ctx->asNil();
+    }
+
+    long id = ctx->getLong(0);
+    Core::as().cMusicUpdate(id);
+    return ctx->asNil();
+}
+
 ExprPtr native_music_is_playing(Context* ctx, int argc)
 {
     if (argc != 1)
@@ -550,6 +575,7 @@ void RegisterAudio(Interpreter& interpreter)
 
     interpreter.registerFunction("LoadMusic", native_music_load);
     interpreter.registerFunction("PlayMusic", native_music_play);
+    interpreter.registerFunction("UpdateMusic", native_music_update);
     interpreter.registerFunction("StopMusic", native_music_stop);
     interpreter.registerFunction("PauseMusic", native_music_pause);
     interpreter.registerFunction("ResumeMusic", native_music_resume);

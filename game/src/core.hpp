@@ -150,6 +150,7 @@ class Core
         u32 MusicLoad(const std::string &path);
         void cMusicPlay(u32 id);
         void cMusicStop(u32 id);
+        void cMusicUpdate(u32 id);
         void cMusicPause(u32 id);
         void cMusicResume(u32 id);
         void cMusicSetVolume(u32 id, double volume);
