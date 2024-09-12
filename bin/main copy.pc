@@ -1,0 +1,46 @@
+struct Pessoa
+{
+    var id;
+    var position;
+};
+
+struct vec2
+{
+    var x;
+    var y;
+};
+
+def game_loop(item)
+{
+    print(item);
+
+    return false;
+}
+
+
+var lista[];
+
+
+
+var pessoa= Pessoa(10,vec2(10,10));
+
+
+lista.push(pessoa);
+lista.push(pessoa);
+lista.push(pessoa);
+
+print(lista.remove(1));
+
+lista.clear();
+
+
+//lista.foreach(game_loop);
+from(var item: lista)
+{
+    print(item);
+}
+
+
+
+
+print("By BY");

@@ -1,0 +1,633 @@
+
+
+struct Steroid
+{
+    var x=0;
+    var y=0;
+    var type=0;
+    var life=1;
+    var speed =0;
+    var angle =0;
+    var rotation=0;
+    var radius=12;
+    var image=0;
+  
+};
+
+struct Bullet
+{
+    var x=0;
+    var y=0;
+    var angle=0;
+    var life=1;
+    var radius=6;
+
+};
+
+struct Player
+{
+    var x =1024/2;
+    var y =400;
+    var angle=0;
+    var radius=12;
+};
+
+struct Animation 
+{
+    var x =0;
+    var y =0;
+    var angle=0;
+    var image=0;
+    var life=0;
+};
+
+var SCREN_WIDTH  =  1024;
+var SCREN_HEIGHT = 720;
+
+CreateWindow(SCREN_WIDTH,SCREN_HEIGHT,"Steroids");
+SetTargetFPS(60);
+InitAudio();
+
+var lista[];
+var bullets[];
+var animations[];
+
+var player = Player();
+
+
+
+
+LoadImage("assets/images/001.png");//player 0
+LoadImage("assets/images/002.png");//bullt 1
+LoadImage("assets/images/003.png");//steroid big 2
+LoadImage("assets/images/004.png");//steroid small 3
+LoadImage("assets/images/005.png");//steroid tiny 4
+
+LoadImage("assets/images/007.png");//player part 5
+LoadImage("assets/images/008.png");
+LoadImage("assets/images/009.png");
+
+
+
+
+
+LoadSound("assets/sounds/tubo8.wav");
+LoadSound("assets/sounds/tubo5.wav");
+
+
+
+var state=1;
+var toState=1;
+var i=0;
+var done=0;
+var count=0;
+var deltaTime=0;
+var gameOverTime=0;
+var time=0;
+var lifes=4;
+var shotCooldown=0.2;
+var shotTimer=0;
+
+
+var steroidsCooldown=3.0;
+var steroidTimer =0;
+
+
+
+var isFade=false;
+var fadeSpeed=0;
+var fader =0;
+var fadevalue=0;
+var endGame=false;
+
+def fadeOut()
+{
+    fader     = 0;
+    isFade    = true;
+    fadeSpeed = 0.05;
+    fadevalue = 0.0;
+}
+
+def fadeIn()
+{
+    fader     = 1;
+    isFade    = true;
+    fadeSpeed = 0.05;
+    fadevalue = 1.0;
+}
+
+
+def explosion(x,y,angle)
+{
+    var r = Random(0 ,360) * DEG;
+    animations.push(Animation(x,y,r+angle-90,5,1));
+    animations.push(Animation(x,y,r+angle,6,1));
+    animations.push(Animation(x,y,r+angle+90,7,1));
+}
+
+def move_animation(anim)
+{
+    anim.x += GetDistX(anim.angle,2) ;
+    anim.y += GetDistY(anim.angle,2) ;   
+    anim.life -=0.02; 
+
+}
+
+def move_bullet(bullet)
+{
+    bullet.x += GetDistX(bullet.angle,15) ;
+    bullet.y += GetDistY(bullet.angle,15) ;
+    if (bullet.x >SCREN_WIDTH+15)
+    {
+        bullet.x-=SCREN_WIDTH-32;
+    } 
+    
+    if(bullet.x<=-15)
+    {
+        bullet.x+=SCREN_WIDTH+32;
+    }
+
+
+    if (bullet.y >SCREN_HEIGHT+15)
+    {
+        bullet.y-=SCREN_HEIGHT-32;
+    } 
+    
+    if(bullet.y<=-15)
+    {
+        bullet.y+= SCREN_HEIGHT+32;
+    }
+    
+}
+
+def move_player()
+{
+        if (KeyDown(KEY_A) or KeyDown(KEY_LEFT) )
+        {
+            player.angle-=PI;
+
+        }elif(KeyDown(KEY_D) or KeyDown(KEY_RIGHT))
+        {
+            player.angle += PI;
+        }
+
+        if (KeyDown(KEY_W) or KeyDown(KEY_UP))
+        {
+            player.x += GetDistX(player.angle,10) ;
+            player.y += GetDistY(player.angle,10) ;
+        }
+
+        if (player.x >SCREN_WIDTH+15)
+        {
+            player.x-=SCREN_WIDTH-32;
+        } 
+        
+        if(player.x<=-15)
+        {
+            player.x+=SCREN_WIDTH+32;
+        }
+
+
+        if (player.y >SCREN_HEIGHT+15)
+        {
+            player.y-=SCREN_HEIGHT-32;
+        } 
+        
+        if(player.y<=-15)
+        {
+            player.y+= SCREN_HEIGHT+32;
+        }
+}
+
+
+def create_steroid(x,y,type)
+{
+    var angle = Random(0,360) * DEG;
+    var s = Steroid();
+    s.x=x;
+    s.y=y;
+    s.type=type;
+    s.life=1;
+    s.speed=Random(4,8);
+    s.angle=angle;
+    s.rotation=Random(5,15);
+    if (type==0)
+    {
+        s.radius=18;
+        s.image=2;
+    }
+    elif (type==1)
+    {
+        s.radius=12;
+        s.image=3;
+    } 
+    elif(type==2)
+    {
+        s.radius=8;
+        s.image=4;
+    }
+    lista.push(s);
+    
+}
+
+def collide(a,b)
+{
+    var collision = false;
+
+    var dx = b.x - a.x;      
+    var dy = b.y - a.y;      
+
+    var distance = Sqr(dx*dx + dy*dy); 
+
+    if (distance <= (a.radius + b.radius)) 
+        collision = true;
+
+    return collision;
+}
+
+
+def move_steroid(steroid)
+{
+    steroid.x += GetDistX(steroid.angle,steroid.speed) ;
+    steroid.y += GetDistY(steroid.angle,steroid.speed) ;
+    if (steroid.x >SCREN_WIDTH+15)
+    {
+        steroid.x-=SCREN_WIDTH-32;
+
+    } 
+    
+    if(steroid.x<=-15)
+    {
+        steroid.x+=SCREN_WIDTH+32;
+    }
+
+
+    if (steroid.y >SCREN_HEIGHT+15)
+    {
+        steroid.y-=SCREN_HEIGHT-32;
+    } 
+    
+    if(steroid.y<=-15)
+    {
+        steroid.y+= SCREN_HEIGHT+32;
+    }
+    if (steroid.type==0)
+        steroid.rotation +=1;
+    elif(steroid.type==1)
+        steroid.rotation +=1.8;
+    else 
+        steroid.rotation +=2;
+
+    
+}
+
+Seed(87645);
+
+
+create_steroid(400,400,0);
+var total=0;
+var point=0;
+var playerHit=false;
+var playerHitTime=0;
+
+while(1)
+{
+
+    deltaTime=GetFrameTime();   
+    time = GetTime();
+    done = WindowShouldClose();
+
+
+    Clear();
+    
+    BeginDraw();
+
+
+
+
+    switch (state)
+    {
+        case 0:
+        {
+            point=0;
+            player.x =1024/2;
+            player.y =400;
+            player.angle=0;
+
+            SetDrawColor(0,1,0.1);
+            SetDrawAlpha(1);
+            DrawText(SCREN_WIDTH/2-50,40,24,"Steroids");
+            SetDrawColor(0.5,0,PingPong(time,10));
+            DrawText(SCREN_WIDTH-120,SCREN_HEIGHT-20,12,"BY Luis santos");
+            
+            var blink = PingPong(time,0.5);
+            SetDrawAlpha(blink);
+            SetDrawColor(1,1,1);
+
+            DrawText(SCREN_WIDTH/2-100,SCREN_HEIGHT/2,28,"Press Space to play!");
+
+            SetDrawAlpha(1);
+
+            if (KeyPress(KEY_SPACE))
+            {
+                toState=1;
+                fadeOut();
+            }
+            
+            if (KeyPress(KEY_ESCAPE))
+            {
+                endGame=true;
+                fadeOut();
+            }
+            
+
+        }
+        
+        case 1:
+        {
+            if (KeyPress(KEY_ESCAPE))
+            {
+                toState=0;
+                fadeOut();
+            }
+            if (lifes==1)
+            {
+                toState=2;
+                fadeOut(); 
+            }
+
+            SetDrawColor(0.5,0.5,0.1);
+            SetDrawAlpha(1);
+            DrawText(SCREN_WIDTH/2-50,40,24,"Points ",string.asInt(point));
+
+            total=0;
+
+            count = lista.size(); 
+
+            steroidTimer += deltaTime;
+
+
+            if (count<=4)
+            {
+                 if (steroidTimer>=steroidsCooldown)
+                 {
+                    steroidTimer=0;
+                    create_steroid(400,400,0);
+                 }
+            }
+
+
+            i=0;
+            while(i<count)
+            {
+                var steroide = lista.at(i);
+            
+                SetImageRotation(steroide.image,steroide.rotation);
+                DrawImage(steroide.image,steroide.x,steroide.y);
+             
+                if (collide(steroide,player) )
+                {
+                    if (playerHit==false)
+                    {
+                        steroide.life=0;
+                        playerHit=true;
+                        playerHitTime=0;
+                        lifes--;
+                        PlaySound(1);
+                        explosion(player.x,player.y,player.angle);
+                    }
+                }
+                         
+        
+                if (steroide.life<=0)
+                {
+
+                    if (steroide.type==0)
+                    {
+                        create_steroid(steroide.x,steroide.y,1);
+                        create_steroid(steroide.x,steroide.y,1);
+                        create_steroid(steroide.x,steroide.y,1);
+
+                    } elif(steroide.type==1)
+                    {
+                        create_steroid(steroide.x,steroide.y,2);
+                        create_steroid(steroide.x,steroide.y,2);
+                        create_steroid(steroide.x,steroide.y,2);
+                        create_steroid(steroide.x,steroide.y,2);
+                    }
+                    point++;
+                    lista.remove(i);
+                    count = lista.size(); 
+                    i--;
+                }
+                move_steroid(steroide);
+                i++;
+            }
+            total +=count;
+
+            count=bullets.size();
+            i=0;
+            while(i<count)
+            {
+                 var bullet = bullets.at(i);
+                 SetImageRotation(1,bullet.angle);
+                 DrawImage(1,bullet.x,bullet.y);
+               //  DrawCircle(bullet.x,bullet.y,bullet.radius);
+                 bullet.life-= (0.8 * deltaTime) ;
+
+                   for (var j=0;j<lista.size();j++)
+                   {
+                         var s = lista.at(j);
+                         if (collide(bullet,s))
+                         {
+                            s.life=0;
+                            bullet.life=0;
+                            PlaySound(1);
+
+                         }
+                         
+                   }
+
+                    if (bullet.life<=0)
+                    {
+                        bullets.remove(i);
+                        count = bullets.size(); 
+                        i--;
+                    
+                    }
+                    move_bullet(bullet);
+               
+                i++;
+            }
+            total +=count;
+            shotTimer += deltaTime;
+
+
+            if (playerHit==false)
+            {
+
+                if (KeyDown(KEY_SPACE) and shotTimer >= shotCooldown)
+                {
+                    var bullet = Bullet(player.x,player.y,player.angle,1);
+                    bullets.push(bullet);
+                    shotTimer=0;
+                    PlaySound(0);
+    
+                }
+
+                move_player();
+
+                SetImageOrigin(0,32/2,20/2);
+                SetImageScale(0,1,1);
+                SetImageRotation(0,player.angle);
+                SetImageAlpha(0,1);
+                DrawImage(0,player.x,player.y);
+            } else  if (playerHit==true) 
+            {
+               
+                var blink = PingPong(time*90,0.9);
+                SetImageAlpha(0,blink);
+                SetImageOrigin(0,32/2,20/2);
+                SetImageScale(0,1,1);
+                SetImageRotation(0,player.angle);
+                DrawImage(0,player.x,player.y);
+                SetImageAlpha(0,1);
+                playerHitTime +=deltaTime;
+                if (playerHitTime>=1.5)
+                {
+                    playerHit=false;
+                    player.x =1024/2;
+                    player.y =400;
+                    player.angle=0;
+                    
+
+                }
+            }
+
+            count=animations.size();
+            i=0;
+            while(i<count)
+            {
+                    var anim = animations.at(i);
+                    DrawImage(anim.image,anim.x,anim.y);
+                    if (anim.life<=0)
+                    {
+                        animations.remove(i);
+                        count = animations.size(); 
+                        i--;
+                    
+                    }
+                    move_animation(anim);
+                i++;
+            }
+            total +=count;
+
+           
+            SetImageAlpha(0,0.8);
+            switch (lifes)
+            {
+                case 2:
+                {
+                    SetImageOrigin(0,(32/2)*0.6,(20 /2)*0.6);
+                    SetImageScale(0,0.6,0.6);
+                    SetImageRotation(0,time*80);
+                    DrawImage(0,20,50);
+                }
+                case 3:
+                {
+                    SetImageOrigin(0,(32/2)*0.6,(20 /2)*0.6);
+                    SetImageScale(0,0.6,0.6);
+                    SetImageRotation(0,time*80);
+                    DrawImage(0,20,50);
+                    DrawImage(0,40,50); 
+                }
+                case 4:
+                {
+                    SetImageOrigin(0,(32/2)*0.6,(20 /2)*0.6);
+                    SetImageScale(0,0.6,0.6);
+                    SetImageRotation(0,time*80);
+                    DrawImage(0,20,50);
+                    DrawImage(0,40,50); 
+                    DrawImage(0,60,50); 
+                }
+            }
+
+            DrawText(10,SCREN_HEIGHT-20,18,"Count",string.asInt(lifes)," time ",deltaTime);
+        }
+        case 2:
+        {
+            var blink = PingPong(time,0.5);
+            SetDrawAlpha(blink);
+            SetDrawColor(1,1,1);
+            gameOverTime +=deltaTime;
+            if (gameOverTime>1.5)
+            {
+                 lista.clear();
+                 bullets.clear();   
+                 gameOverTime=0;
+                 toState=0;
+                 fadeOut(); 
+            }
+
+            DrawText(SCREN_WIDTH/2-100,SCREN_HEIGHT/2,28,"GAME OVER!");
+        }
+    };
+
+  
+
+    if (isFade==true)
+    {
+            switch(fader)
+            {
+                case 0:
+                {
+                    fadevalue = fadevalue  + fadeSpeed;
+                    if (fadevalue>=0.9)
+                    {
+                        
+                        
+                            if (endGame==true)
+                            {
+
+                                done=true;
+                            }
+                            state=toState; 
+                            fadeIn();
+                            lista.clear();
+                            bullets.clear(); 
+                    }
+
+                }
+                case 1:
+                {
+                    fadevalue = fadevalue  - fadeSpeed;
+                    if (fadevalue<=0.1)
+                    {
+                        isFade=false;
+                    }
+                    
+                }
+            }
+             SetDrawAlpha(fadevalue);
+             SetDrawColor(0,0,0);
+             DrawRect(0,0,SCREN_WIDTH,SCREN_HEIGHT,true);
+    }
+
+    EndDraw();
+
+
+
+
+    if (done)
+    {
+        break;
+    }
+    
+}
+
+
+
+
+
+
+print("by by");

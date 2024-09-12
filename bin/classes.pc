@@ -1,0 +1,92 @@
+class Person 
+{
+    var name="none";
+    var age=0;
+    var colors[];
+
+    def init(a,b)
+    {
+         print("CONTRUCT");
+        name= a;
+        age  =b;
+       
+    }
+
+    def say()
+    {
+
+        print(name);
+        print(age);
+        
+        return false;
+    }
+
+    def count()
+    {
+        return 123;
+    }
+
+};
+
+class Animal 
+{
+    var name="none";
+
+    def init(n)
+    {
+        name=n;
+    }
+    def bark()
+    {
+        print(name);
+    }
+    def set_name(n)
+    {
+        name=n;
+    }
+};
+
+class Cao : Animal 
+{
+    var type="none";
+    def init(n,type)
+    {
+        super.init(n);
+        self.type = type;
+    }
+    def bark()
+    {
+        super.bark();
+        print(type);
+    }
+};
+var dog = Cao("bu","doido");
+dog.bark();
+print("By BY");
+
+
+
+var lista[];
+var bill = Person("bill",23);
+lista.push(bill);
+var luis = Person("luis",44);
+lista.push(luis);
+
+
+luis.say();
+bill.say();
+
+from (var item: lista)
+{
+   print(item);
+}
+
+var valor = lista.at(0);
+valor.say();
+valor = lista.at(1);
+valor.say();
+
+
+print("By BY");
+
+

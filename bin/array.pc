@@ -1,0 +1,37 @@
+struct Player
+{
+    var name="Luis";
+    var age=99;
+};
+
+var lista[]=[1,2,"luis",4,5,6];
+
+
+lista.push(23);
+lista.push(34);
+
+var p = Player();
+lista.push(p);
+
+var a = lista.length();
+
+print(a);
+
+lista.push(123);
+
+
+var value = lista.pop();
+
+print("Remove :");
+print(value);
+
+print(lista);
+
+lista.set(2,"rute");
+
+print(lista);
+
+print(lista.at(1));
+
+
+print("By BY");

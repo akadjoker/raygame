@@ -1,0 +1,131 @@
+
+
+struct Bunny
+{
+    var x;
+    var y;
+    var speed_x;
+    var speed_y;
+};
+
+
+CreateWindow(1024,720,"Raygame");
+
+
+var lista[];
+
+
+
+
+var maxX=1000;
+var maxY=700;
+
+var minX=24;
+var minY=24;
+var gravity =0.05;
+var image = LoadImage("assets/wabbit_alpha.png");
+
+
+var i=0;
+var done=0;
+var count =0;
+while(1)
+{
+
+  
+
+    Clear();
+    
+    BeginDraw();
+
+    var mouse_x= GetMouseX();
+    var mouse_y= GetMouseY();
+
+    if (MousePress(0)==1)
+    {
+       lista.push(Bunny(mouse_x,mouse_y,Random()*2.0,Random()*5-2.5));
+    }
+
+
+
+    i = 0;
+    count = lista.size(); 
+    while(i<count)
+    {
+         var bunny = lista.at(i);
+
+        
+
+        
+         
+        
+
+        bunny.x  = bunny.x + bunny.speed_x;
+        bunny.y  = bunny.y + bunny.speed_y;
+        bunny.speed_y = bunny.speed_y + gravity;
+
+
+       
+        
+        if (bunny.x > maxX)
+        {
+             bunny.speed_x = bunny.speed_x *-1;
+             bunny.x = maxX;
+        }elif(bunny.x<minX)
+        {
+             bunny.speed_x = bunny.speed_x *-1;
+             bunny.x = minX;
+        }
+
+        if (bunny.y>maxY)
+        {
+            bunny.speed_y = bunny.speed_y *-0.8;
+            bunny.y=maxY;  
+            if (Random()>0.5)
+            {
+                bunny.speed_y =- 3 + Random() * 4.0;
+            }
+        } elif(bunny.y<minY)
+        {
+             bunny.speed_y = 0;
+             bunny.y=minY;  
+
+        }
+
+
+
+
+        
+       //  DrawCircle(bunny.x,bunny.y,15,false);
+         DrawImage(0,bunny.x,bunny.y);
+
+
+
+         i++;
+     
+    }
+   
+
+    DrawCircle(mouse_x,mouse_y,15,false);
+    DrawText(10,60,12,count);
+
+    DrawRect(400,20,120,120,true);
+
+    EndDraw();
+
+
+
+    done = ProcessEvents();
+    if (done==1)
+        break;
+
+    _gc();
+
+}
+
+
+
+CloseWindow();
+
+
+print("by by");

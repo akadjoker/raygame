@@ -1,0 +1,30 @@
+struct Sprite
+{
+    var id=9;
+    var x=0;
+    var y=0;
+};
+
+
+
+var lista[];
+
+
+for (var i=0;i<4;i++)
+{
+    var sprite = Sprite(i,0,0);
+    lista.push(sprite);
+}
+
+
+print(lista);
+
+print(lista.at(0));
+print(lista.at(1));
+print(lista.at(2));
+
+
+
+print("By BY");
+
+
