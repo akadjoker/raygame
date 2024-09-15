@@ -163,7 +163,7 @@ void Core::End_Drawing()
     if (!isReady)
         return;
     DrawFPS(10, 10);
-    //   DrawText(memoryIn(Factory::as().size()), 10, 40, 20, WHITE);
+    DrawText(memoryIn(Factory::as().size()), 10, 40, 20, WHITE);
     EndDrawing();
 }
 
@@ -370,6 +370,8 @@ void RegisterCore(Interpreter& interpreter)
 
     REGISTER_CORE_FUNCTION(interpreter, "GetFrameTime", GetFrameTime);
     REGISTER_CORE_FUNCTION(interpreter, "GetTime", GetTime);
+    REGISTER_CORE_FUNCTION(interpreter, "GetFPS", GetFPS);
+    
     
 
 

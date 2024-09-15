@@ -135,3 +135,8 @@ u8 FromStmt::visit(Visitor &v)
 {
     return v.visit_from(this);
 }
+
+u8 LoopStmt::visit(Visitor &v)
+{
+   return v.visit_loop(this);
+}

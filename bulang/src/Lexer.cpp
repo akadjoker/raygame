@@ -396,6 +396,7 @@ void Lexer::initialize()
   keywords["from"] = TokenType::FROM;
 
   keywords["while"] = TokenType::WHILE;
+  keywords["loop"] = TokenType::LOOP;
 
   keywords["do"] = TokenType::DO;
 
@@ -411,7 +412,7 @@ void Lexer::initialize()
 
   keywords["struct"] = TokenType::STRUCT;
 
-  keywords["self"] = TokenType::SELF;
+ // keywords["self"] = TokenType::SELF;
 
   //keywords["super"] = TokenType::SUPER;
 

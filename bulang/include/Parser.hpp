@@ -80,6 +80,7 @@ private:
 
     StmtPtr if_statement();
     StmtPtr while_statement();
+    StmtPtr loop_statement();
     StmtPtr do_statement();
     StmtPtr for_statement();
     StmtPtr from_statement();

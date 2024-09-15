@@ -1,0 +1,355 @@
+
+var SCREEN_WIDTH  =  1024;
+var SCREEN_HEIGHT = 720;
+
+
+var maxX=1000;
+var maxY=700;
+
+var minX=24;
+var minY=24;
+var gravity =0.05;
+
+var node_id=0;
+
+def circle_collide(a,b)
+{
+    var collision = false;
+
+    var dx = b.x - a.x;      
+    var dy = b.y - a.y;      
+
+    var distance = Sqr(dx*dx + dy*dy); 
+
+    if (distance <= (a.radius + b.radius)) 
+        collision = true;
+
+    return collision;
+}
+
+
+class Mask
+{
+    var type=0;
+    var x=0;
+    var y=0;
+
+    def init(x,y)
+    {
+        self.x=x;
+        self.y=y;
+    }
+    def render()
+    {
+
+    }
+    def collide(other)
+    {
+        if (type==1)
+        {
+            if(other.type==1)
+            {
+                return circle_collide(self,other);
+            }
+            
+
+        }
+        return false;
+    }
+};
+
+class CircleMask : Mask 
+{
+    var radius=0;
+    def init(x,y,r)
+    {  
+        super.init(x,y);
+        radius = r;
+        type=1;
+    }
+    def render()
+    {
+        DrawCircle(x,y,radius);
+    }
+};
+
+class RectMask : Mask 
+{
+    var width =1;
+    var height=1;
+    def init(x,y,w,h)
+    {
+        super.init(x,y);
+        type=2;
+        width=w;
+        height=h;
+    }
+    def render()
+    {
+        DrawRect(x,y,width,height);
+    }
+};
+
+
+class Node
+{
+    var x   = 0;
+    var y   = 0;
+    var id  = 0;
+    var done=false;
+    var life=0;
+
+    def init(x,y)
+    {
+        self.x=x;
+        self.y=y;
+        self.id = node_id;
+        node_id = node_id + 1;
+    }
+    def update(dt)
+    {
+       
+    }
+    def kill()
+    {
+        done=true;
+    }
+    def render()
+    {
+        DrawCircle(self.x,self.y,10);
+    }
+    def collision(with)
+    {
+
+    }
+    def collide(with)
+    {
+        return mask.collide(with.mask);
+    }
+};
+
+
+
+class Bunny : Node 
+{
+    var speed_x=0;
+    var speed_y=0;
+    var mask=Mask(0,0);
+    var alert=0;
+
+    def init(x,y)
+    {
+      super.init(x,y);
+      speed_x=Random()*2.0;
+      speed_y=Random()*5-2.5;
+      life   =Random(500,1000);
+
+      if (Random(0,100)>50)
+      {
+           mask = CircleMask(x,y,20);
+      } else 
+      {
+           mask = RectMask(x,y,32,32);
+      }
+
+ 
+
+     
+
+    }
+    def update(dt)
+    {
+
+        x  = x + speed_x;
+        y  = y + speed_y;
+        life = life - 1;
+        speed_y = speed_y + gravity;
+
+        if (x > maxX)
+        {
+             speed_x = speed_x *-1;
+             x = maxX;
+        }elif(x<minX)
+        {
+             speed_x = speed_x *-1;
+             x = minX;
+        }
+
+        if (y>maxY)
+        {
+            speed_y = speed_y *-0.8;
+            y=maxY;  
+            if (Random()>0.5)
+            {
+                speed_y =- 3 + Random() * 4.0;
+            }
+        } elif(y<minY)
+        {
+             speed_y = 0;
+             y=minY;  
+
+        }
+
+        mask.x=x;
+        mask.y=y;
+        //if (life<=0)
+       //     kill();          
+        
+    }
+
+     def collision(with)
+    {
+         DrawCircle(self.x,self.y,10,true);
+         alert=1;
+    }
+
+    def render()
+    {
+         mask.render();
+
+        if (alert==0)
+            SetImageColor(0,1,1,1);
+        else 
+            SetImageColor(0,1,0,0);
+
+        alert=0;
+         DrawImage(0,x,y);
+    }
+
+  
+};
+
+class Scene 
+{
+    var lista[];
+    var count=0;
+
+    def update(dt)
+    {
+        var i=0;
+        count = lista.size();
+        while(i<count)
+        {
+            var n = lista.at(i);
+            if (n.done)
+            {
+                lista.remove(i);
+                count=lista.size();
+                i--;
+            }
+        
+            n.update(dt);
+            n.render();
+            i++;
+        }
+        DrawText(20,40,12,"Total:",string.asInt(count));
+    }
+    def add(n)
+    {
+        lista.push(n);
+    }
+    def clear()
+    {
+        lista.clear();
+    }
+    def total()
+    {
+        return lista.size();
+    }
+    def collisions()
+    {
+        var i=  0;
+        var j = 1;
+        var count = lista.size();
+        if (count==0) return false;
+
+        while(i<count)
+        {
+            
+            j= i + 1;
+            var a = lista.at(i);
+
+            while(j<count)
+            {
+                var b = lista.at(j);
+                if (a.id==b.id) continue;
+                if (a.collide(b))
+                {
+                    a.collision(b);
+                    return true;
+                }
+                if (b.collide(a))
+                {
+                    b.collision(a);
+                    return true;
+                }
+                j= j+ 1;
+            }
+            i= i + 1;
+        }
+        
+    }
+};
+
+
+CreateWindow(SCREEN_WIDTH,SCREEN_HEIGHT,"Steroids");
+SetTargetFPS(60);
+InitAudio();
+
+var image = LoadImage("assets/wabbit_alpha.png");
+
+var scene = Scene();
+
+Seed(87645);
+
+
+
+while(1)
+{
+
+    var deltaTime=GetFrameTime();   
+    var time = GetTime();
+    var done = WindowShouldClose();
+    var mouse_x= GetMouseX();
+    var mouse_y= GetMouseY(); 
+
+
+    if (MousePress(0))
+    {
+           
+           var n = Bunny(mouse_x,mouse_y);
+           scene.add(n);
+     
+    }
+
+
+    Clear();
+    
+    BeginDraw();
+
+
+
+
+    scene.update(deltaTime);
+    scene.collisions();
+
+
+
+    EndDraw();
+
+
+
+
+    if (done)
+        break;
+    
+    
+}
+
+
+
+
+
+
+print("by by");
+

@@ -75,6 +75,7 @@ enum class TokenType
     // LOOPS
     DO,
     WHILE,
+    LOOP,
     FOR,
     FROM,
     BREAK,
@@ -153,7 +154,9 @@ inline std::string tknString(TokenType type)
         case TokenType::FALSE:         return "FALSE";
         case TokenType::TRUE:          return "TRUE";
       
+
         case TokenType::WHILE:         return "WHILE";
+        case TokenType::LOOP:           return "LOOP";
         case TokenType::FOR:           return "FOR";
         case TokenType::FROM:          return "FROM";
 

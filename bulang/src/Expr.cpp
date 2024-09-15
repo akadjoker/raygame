@@ -55,7 +55,7 @@ void NumberLiteral::print()
 
 ExprPtr NumberLiteral::clone()
 {
-    std::shared_ptr<NumberLiteral> expr = std::make_shared<NumberLiteral>();
+    std::shared_ptr<NumberLiteral> expr = Factory::as().getNumber();
     expr->value = value;
     return expr;
 }
@@ -72,7 +72,7 @@ void StringLiteral::print()
 
 ExprPtr StringLiteral::clone()
 {
-    std::shared_ptr<StringLiteral> expr = std::make_shared<StringLiteral>();
+    std::shared_ptr<StringLiteral> expr = Factory::as().getString();
     expr->value = value;
     return expr;
 }

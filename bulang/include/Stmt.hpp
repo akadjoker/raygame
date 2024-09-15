@@ -19,6 +19,7 @@ enum StmtType
     DECLARATION,
     IF,
     WHILE,
+    LOOP,
     FOR,
     FROM,
     DO,
@@ -123,6 +124,16 @@ public:
     ExprPtr condition;
     StmtPtr body;
 
+};
+
+class LoopStmt : public Stmt
+{
+public:
+    LoopStmt() : Stmt() { type = StmtType::LOOP; }
+
+    u8 visit( Visitor &v) override;
+
+    StmtPtr body;
 };
 
 class DoStmt : public Stmt

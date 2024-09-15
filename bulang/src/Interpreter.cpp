@@ -29,25 +29,18 @@ public:
 
 ExprPtr Compiler::visit(ExprPtr node)
 {
-    if (!node) std::make_shared<Literal>();
+    if (!node)        return NIL;
     return node->accept(*this);
 }
 
 ExprPtr Compiler::visit_assign(Assign *node)
 {
-    if (!node) return std::make_shared<Literal>();
+    if (!node)         return NIL;
     ExprPtr value = evaluate(node->value);
-
-    
-
     if (!environment->assign(node->name.lexeme, std::move(value)))
     {
-
-      
        throw FatalException("Undefined variable: '" + node->name.lexeme +"' at line  "+ std::to_string(node->name.line )+" or mixe types.");
     }
-
-
     return value;
 }
 
@@ -57,7 +50,7 @@ ExprPtr Compiler::evaluate(ExprPtr node)
     if (!node)
     {
         WARNING("Evaluation error: Unknown expression type");
-        return std::make_shared<Literal>();
+        return NIL;;
     }
     std::shared_ptr<Expr>  result = visit(node);
     return result;
@@ -80,7 +73,7 @@ ExprPtr Compiler::visit_call_native(CallExpr *node)
 
     return result;
 
-    return std::make_shared<Literal>();
+    
 }
 ExprPtr Compiler::visit_call_struct(const ExprPtr &var,CallExpr *node,Expr *expr) 
 {
@@ -126,7 +119,8 @@ ExprPtr Compiler::visit_call_function(CallExpr *node,Expr *callee)
         throw FatalException("Incorrect number of arguments in call to '" + node->name.lexeme +"' at line "+ std::to_string(node->name.line )+ " expected " + std::to_string(function->arity) + " but got " + std::to_string(node->args.size()));
     }
 
-    std::shared_ptr<Environment>  local = std::make_shared<Environment>(environment);
+    std::shared_ptr<Environment>  local =Factory::as().createEnvironment(environment); 
+
 
     for (u32 i = 0; i < node->args.size(); i++)
     {
@@ -149,7 +143,7 @@ ExprPtr Compiler::visit_call_function(CallExpr *node,Expr *callee)
 
     if (result == nullptr)
     {
-        result = std::make_shared<Literal>();
+        result = NIL;;
     }
 
     environment = previousEnvironment;
@@ -170,7 +164,7 @@ ExprPtr Compiler::visit_call_class(const ExprPtr &result,CallExpr *node, Expr *c
         if (!parent)
         {
             WARNING("Undefined parent class: '%s'", main->parentName.c_str());
-            return  std::make_shared<Literal>();
+            return  NIL;;
         }
     }
 
@@ -215,7 +209,6 @@ ExprPtr Compiler::visit_call_class(const ExprPtr &result,CallExpr *node, Expr *c
     }
    
         
-    
 
     
 
@@ -233,8 +226,7 @@ ExprPtr Compiler::visit_call_class(const ExprPtr &result,CallExpr *node, Expr *c
                     {
 
                         instance = s;
-                      //  prefEnv = s->environment;
-                        std::shared_ptr<CallExpr> call = std::make_shared<CallExpr>();
+                        std::shared_ptr<CallExpr> call = Factory::as().getCall();
                         call->name = node->name;
                         call->callee = value;
                         call->args =node->args;
@@ -248,12 +240,12 @@ ExprPtr Compiler::visit_call_class(const ExprPtr &result,CallExpr *node, Expr *c
 
                         }
                         instance = nullptr;
-                      //  prefEnv = nullptr;
+
                     }
 
         }
 
-       
+      
 
     
     return s;
@@ -262,7 +254,7 @@ ExprPtr Compiler::visit_call_class(const ExprPtr &result,CallExpr *node, Expr *c
 ExprPtr Compiler::visit_call(CallExpr *node)
 {
 
-    if (!node)   return  std::make_shared<Literal>();
+    if (!node)   return  NIL;;
           
 
 
@@ -313,7 +305,7 @@ ExprPtr Compiler::ProcessString(Expr *var, GetDefinitionExpr *node)
     std::string action = node->name.lexeme;
     if (action == "length")
     {
-        std::shared_ptr<NumberLiteral> number = std::make_shared<NumberLiteral>();
+        std::shared_ptr<NumberLiteral> number = Factory::as().getNumber();
         number->value = static_cast<double>(estring->value.length());
         return number;
     } else if (action == "asInt") 
@@ -329,7 +321,7 @@ ExprPtr Compiler::ProcessString(Expr *var, GetDefinitionExpr *node)
             throw FatalException("String 'asInt' requires a number argument");
         }
         NumberLiteral *number = static_cast<NumberLiteral *>(value.get());
-        std::shared_ptr<StringLiteral> result = std::make_shared<StringLiteral>();
+        std::shared_ptr<StringLiteral> result = Factory::as().getString();
         long numberValue = static_cast<long>(number->value);
         result->value = std::to_string(numberValue);
         return result;
@@ -338,7 +330,7 @@ ExprPtr Compiler::ProcessString(Expr *var, GetDefinitionExpr *node)
         
          throw FatalException("Unknown string function '" + action + "'");
     }
-    return std::make_shared<Literal>();
+    return NIL;;
 }
 
 ExprPtr Compiler::ProcessArray(Expr *var, GetDefinitionExpr *node)
@@ -389,7 +381,7 @@ ExprPtr Compiler::ProcessArray(Expr *var, GetDefinitionExpr *node)
                 return value;
         } else if (action == "size")
         {
-            std::shared_ptr<NumberLiteral> size = std::make_shared<NumberLiteral>();
+            std::shared_ptr<NumberLiteral> size = Factory::as().getNumber();
             size->value = array->values.size();
             return size;
         }
@@ -486,7 +478,7 @@ ExprPtr Compiler::ProcessArray(Expr *var, GetDefinitionExpr *node)
                 std::vector<std::shared_ptr<CallExpr>> calls;     
                 for (u32 i = 0; i < array->values.size(); i++)
                 {
-                      std::shared_ptr<CallExpr> call = std::make_shared<CallExpr>();
+                      std::shared_ptr<CallExpr> call =  Factory::as().getCall();
                       calls.push_back(call);
                       call->name = node->name;
                       call->callee = value;
@@ -574,10 +566,10 @@ ExprPtr Compiler::ProcessMap(Expr *var, GetDefinitionExpr *node)
            
 
             
-            return  std::make_shared<Literal>();
+            return  NIL;;
         } else if (action == "size")
         {
-            std::shared_ptr<NumberLiteral> result = std::make_shared<NumberLiteral>();
+            std::shared_ptr<NumberLiteral> result = Factory::as().getNumber();
             result->value = map->values.size();
             return result;
         } else if (action == "set")
@@ -644,12 +636,12 @@ ExprPtr Compiler::ProcessMap(Expr *var, GetDefinitionExpr *node)
                 WARNING("Key not found: %f", nl->value);
             }
 
-            return  std::make_shared<Literal>();
+            return  NIL;;
         }
         else if (action == "clear")
         {
             map->values.clear();
-            return std::make_shared<Literal>();
+            return NIL;;
         }
         else if (action == "foreach")
         {
@@ -672,7 +664,7 @@ ExprPtr Compiler::ProcessMap(Expr *var, GetDefinitionExpr *node)
                 ExprPtr v = it->second;
 
               
-                std::shared_ptr<CallExpr>call = std::shared_ptr<CallExpr>();
+                std::shared_ptr<CallExpr>call =  Factory::as().getCall();
                 calls.push_back(call);
                 call->name = node->name;
                 call->callee = value;
@@ -682,7 +674,7 @@ ExprPtr Compiler::ProcessMap(Expr *var, GetDefinitionExpr *node)
                     
             }
             calls.clear();
-            return std::make_shared<Literal>();
+            return NIL;;
         }
         else 
         {
@@ -691,7 +683,7 @@ ExprPtr Compiler::ProcessMap(Expr *var, GetDefinitionExpr *node)
         }
     
     
-    return std::make_shared<Literal>();
+    return NIL;;
 }
 
 
@@ -703,9 +695,10 @@ ExprPtr Compiler::visit_call_function_member(CallExpr *node,Expr *callee, ClassL
         throw FatalException("Incorrect number of arguments in call to '" + node->name.lexeme +"' at line "+ std::to_string(node->name.line )+ " expected " + std::to_string(function->arity) + " but got " + std::to_string(node->args.size()));
     }
 
+    Environment *pref = environment;
+    std::shared_ptr<Environment>  local =Factory::as().createEnvironment(main->environment);
+    local->define("self", instance);
 
-    std::shared_ptr<Environment>  local = std::make_shared<Environment>(main->environment);
- //   local->define("self", instance);
     
     for (u32 i = 0; i < node->args.size(); i++)
     {
@@ -715,6 +708,8 @@ ExprPtr Compiler::visit_call_function_member(CallExpr *node,Expr *callee, ClassL
             throw FatalException("Duplicate identifier from argumnts");
         }
     }
+    
+    environment = local.get();
 
     ExprPtr result = nullptr;
     try  
@@ -729,14 +724,14 @@ ExprPtr Compiler::visit_call_function_member(CallExpr *node,Expr *callee, ClassL
     catch (const std::exception &e)
     {
         ERROR("execute class function : %s", e.what());
-        throw e;
+        throw FatalException(e.what());
     }
 
-
+    environment = pref;    
 
     if (result == nullptr)
     {
-        result =  std::make_shared<Literal>();
+        result =  NIL;;
     }
      return result;
 }
@@ -777,7 +772,7 @@ ExprPtr Compiler::ProcessClass(const ExprPtr &var, GetDefinitionExpr *node)//cal
 
             ExprPtr result = nullptr;
             instance = std::dynamic_pointer_cast<ClassLiteral>(var);
-            std::shared_ptr<CallExpr> call = std::make_shared<CallExpr>();
+            std::shared_ptr<CallExpr> call =  Factory::as().getCall();
             call->name = node->name;
             call->callee = value;
             call->args = node->values;
@@ -837,6 +832,12 @@ ExprPtr Compiler::visit_get(GetExpr *node)
 
     
     ExprPtr object = evaluate(node->object);
+    if (!object)
+    {
+        ERROR("Object not found: %s to get value", node->name.lexeme.c_str());
+
+        return  NIL;;
+    }
     if (object->type==ExprType::L_STRUCT)
     {
         StructLiteral *sl = static_cast<StructLiteral *>(object.get());
@@ -847,7 +848,7 @@ ExprPtr Compiler::visit_get(GetExpr *node)
         } else 
         {
             ERROR("Member not found: %s", node->name.lexeme.c_str());
-            return  std::make_shared<Literal>();
+            return  NIL;;
         }
     } else if (object->type == ExprType::L_ARRAY)
     {
@@ -868,7 +869,7 @@ ExprPtr Compiler::visit_get(GetExpr *node)
         }   else 
         {
             WARNING("Class member not found: %s", action.c_str());
-            return  std::make_shared<Literal>();
+            return  NIL;;
         }
     } else if (object->type == ExprType::L_STRING)
     {
@@ -886,7 +887,7 @@ ExprPtr Compiler::visit_self(SelfExpr *node)
     if (instance==nullptr)
     {
         ERROR("Self must be call from a class");
-        return  std::make_shared<Literal>();
+        return  NIL;;
     }
     return instance;
 }
@@ -897,12 +898,12 @@ ExprPtr Compiler::visit_super(SuperExpr *node)
     if (instance==nullptr)
     {
         ERROR("Super must be call from a child class");
-        return  std::make_shared<Literal>();
+        return  NIL;;
     }
     if(!instance->isChild)
     {
         ERROR("Super must be call from a child class");
-        return  std::make_shared<Literal>();
+        return  NIL;;
     }
     return instance->base;
 }
@@ -912,6 +913,11 @@ ExprPtr Compiler::visit_set(SetExpr *node)
 
     
     ExprPtr object = evaluate(node->object);
+    if (!object)
+    {
+        ERROR("Object not found: %s to set value", node->name.lexeme.c_str());
+        return NIL;;
+    }
     if (object->type==ExprType::L_STRUCT)
     {
         StructLiteral *sl = static_cast<StructLiteral *>(object.get());
@@ -940,8 +946,10 @@ ExprPtr Compiler::visit_set(SetExpr *node)
         ExprPtr key = cl->environment->get(action);
         if (key)
         {
+               //  WARNING("TODO class SET: %s", node->name.lexeme.c_str());
+
                ExprPtr value = evaluate(node->value);
-               cl->environment->set(action, std::move(value));//move or not to move
+               cl->environment->set(action, value);//move or not to move
            
         }   else 
         {
@@ -958,7 +966,7 @@ ExprPtr Compiler::visit_set(SetExpr *node)
 
 ExprPtr Compiler::visit_now_expression(NowExpr *node)
 {
-    std::shared_ptr<NumberLiteral> result = std::make_shared<NumberLiteral>();
+    std::shared_ptr<NumberLiteral> result = Factory::as().getNumber();
     
     result->value = time_now();
     return result;
@@ -1013,7 +1021,8 @@ u8 Compiler::visit_block_smt(BlockStmt *node)
     Environment * prev = environment;
     u8 result = 0;
 
-    std::shared_ptr<Environment> env = std::make_shared<Environment>(environment);
+    std::shared_ptr<Environment> env = Factory::as().createEnvironment(environment);
+
     
         try 
         {
@@ -1202,7 +1211,7 @@ static bool is_equal(ExprPtr a, ExprPtr b)
 u8 Compiler::visit_if(IFStmt *node)
 {
 
-       auto previousEnvironment = environment;
+
 
     //INFO("Visit if: %s", node->condition->toString().c_str());
     ExprPtr condition = evaluate(node->condition);
@@ -1211,8 +1220,7 @@ u8 Compiler::visit_if(IFStmt *node)
     
     if (is_truthy(condition))
     {
-        result = execute(node->then_branch.get());
-        
+        return execute(node->then_branch.get());
     }
     
     for (auto elif : node->elifBranch)
@@ -1220,8 +1228,8 @@ u8 Compiler::visit_if(IFStmt *node)
         condition = evaluate(elif->condition);
         if (is_truthy(condition))
         {
-            result =  execute(elif->then_branch.get());
-            break;
+            return   execute(elif->then_branch.get());
+            
         }
     }
     
@@ -1231,13 +1239,43 @@ u8 Compiler::visit_if(IFStmt *node)
     }
 
 
-    environment = previousEnvironment;
+
 
 
     return result;
 
 }
+u8 Compiler::visit_loop(LoopStmt *node) 
+{
+    auto previousEnvironment = environment;
 
+    loop_count++;
+
+    
+    while (true)
+    {
+
+        try  
+        {
+                execute(node->body.get());
+        }
+        catch (const BreakException &e)
+        {
+            
+            break;
+        }
+
+        catch (const ContinueException &e)
+        {
+        }
+      
+    }
+
+    loop_count--;
+    environment = previousEnvironment;
+    return 0;
+
+}
 u8 Compiler::visit_while(WhileStmt *node)
 {
     auto previousEnvironment = environment;
@@ -1503,7 +1541,7 @@ u8 Compiler::visit_for(ForStmt *node)
 {
 
    
-    std::shared_ptr<Environment> envInit = std::make_shared<Environment>(environment); 
+    std::shared_ptr<Environment> envInit =Factory::as().createEnvironment(environment);
     auto previousEnvironment = environment;
     environment = envInit.get();
 
@@ -1526,7 +1564,7 @@ u8 Compiler::visit_for(ForStmt *node)
     {
         
             
-            std::shared_ptr<Environment> local = std::make_shared<Environment>(envInit.get());
+            std::shared_ptr<Environment> local = Factory::as().createEnvironment(envInit.get());
             environment = local.get();
             condition = evaluate(node->condition);
             if (!is_truthy(condition))
@@ -1582,7 +1620,7 @@ u8 Compiler::visit_from(FromStmt *node)
     }
 
 
-    std::shared_ptr<Environment> envInit = std::make_shared<Environment>(environment); 
+    std::shared_ptr<Environment> envInit = Factory::as().createEnvironment(environment);
     environment = envInit.get();
 
 
@@ -1601,7 +1639,7 @@ u8 Compiler::visit_from(FromStmt *node)
     for (u32 i = 0; i < al->values.size(); i++)
     {
       
-        std::shared_ptr<Environment> env = std::make_shared<Environment>(envInit.get());
+        std::shared_ptr<Environment> env =  Factory::as().createEnvironment(envInit.get());
         environment = env.get();
         ExprPtr value = al->values[i];
         env->set(name, value);
@@ -1708,6 +1746,8 @@ Compiler::Compiler(Interpreter *i, Compiler *c)
     interpreter = i;
     parent = c;
 
+    NIL = std::make_shared<Literal>();
+
     global = std::make_shared<Environment>(nullptr);
     global->define("string", std::make_shared<StringLiteral>());
     global->define("number", std::make_shared<NumberLiteral>());
@@ -1725,6 +1765,7 @@ void Compiler::init()
 Compiler::~Compiler()
 {
  
+    NIL = nullptr;
     environment = nullptr;
     instance = nullptr;
    // prefEnv = nullptr;
@@ -1735,9 +1776,8 @@ Compiler::~Compiler()
 
 ExprPtr Compiler::visit_empty_expression(EmptyExpr *node)
 {
-    return std::make_shared<Literal>();
+    return NIL;
 }
-
 
 ExprPtr Compiler::visit_binary(BinaryExpr *node)
 {
@@ -1766,7 +1806,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value > r->value ? 1 : 0;
 
                 return result;
@@ -1781,7 +1821,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value >= r->value ? 1 : 0;
                 return result;
             }
@@ -1795,7 +1835,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value < r->value ? 1 : 0;
                 return result;
             }
@@ -1809,7 +1849,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = (l->value <= r->value) ? 1 : 0;
                 
                 return result;
@@ -1823,21 +1863,21 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value + r->value;
                 return result;
             } else if (left->type == ExprType::L_STRING && right->type == ExprType::L_STRING)
             {
                 StringLiteral *l = static_cast<StringLiteral *>(left.get());
                 StringLiteral *r = static_cast<StringLiteral *>(right.get());
-                std::shared_ptr<StringLiteral> result =  std::make_shared<StringLiteral>();
+                std::shared_ptr<StringLiteral> result =  Factory::as().getString();
                 result->value = l->value + r->value;
                 return result;
             } else if (left->type == ExprType::L_STRING && right->type == ExprType::L_NUMBER)
             {
                 StringLiteral *l = static_cast<StringLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<StringLiteral> result =  std::make_shared<StringLiteral>();
+                std::shared_ptr<StringLiteral> result =  Factory::as().getString();
                 result->value = l->value + std::to_string(r->value);
 
                 return result;
@@ -1845,7 +1885,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 StringLiteral *r = static_cast<StringLiteral *>(right.get());
-                std::shared_ptr<StringLiteral> result =  std::make_shared<StringLiteral>();
+                std::shared_ptr<StringLiteral> result =  Factory::as().getString();;
                 result->value = std::to_string(l->value) + r->value;
                 return result;
             }
@@ -1857,7 +1897,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value - r->value;
 
                 return result;
@@ -1870,7 +1910,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 if (r->value == 0)
                 {
 
@@ -1889,7 +1929,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();   
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();  
                 result->value = l->value * r->value;
 
                 return result;
@@ -1902,7 +1942,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value =std::fmod(l->value, r->value);
    
    
@@ -1916,7 +1956,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value != r->value ? 1 : 0;
    
                 return result;
@@ -1924,7 +1964,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 StringLiteral *l = static_cast<StringLiteral *>(left.get());
                 StringLiteral *r = static_cast<StringLiteral *>(right.get());
-               std::shared_ptr< NumberLiteral> result =  std::make_shared<NumberLiteral>();
+               std::shared_ptr< NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value != r->value ? 1 : 0;
                 return result;
             }
@@ -1937,7 +1977,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value == r->value ? 1 : 0;
 
                 return result;
@@ -1945,7 +1985,7 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 StringLiteral *l = static_cast<StringLiteral *>(left.get());
                 StringLiteral *r = static_cast<StringLiteral *>(right.get());
-                std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 result->value = l->value == r->value ? 1 : 0;
 
                 return result;
@@ -1958,12 +1998,10 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-               // std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
-               // result->value = l->value += r->value;
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
+                result->value = l->value += r->value;
 
-                l->value += r->value;
-
-                return left;
+                return result;
             }
             break;
         }
@@ -1974,18 +2012,9 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
              
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                //std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
-
-              //  INFO("l: %f, r: %f", l->value, r->value);
-
-                l->value -= r->value;
-
-                return left;
-                
-
-                //result->value = l->value -= r->value;
-
-             //   return result;
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
+                result->value = l->value -= r->value;
+                return result;
             }
             break;
         }
@@ -1995,12 +2024,10 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                //std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
-                //result->value = l->value *= r->value;
-                //return result;
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
+                result->value = l->value *= r->value;
+                return result;
 
-                l->value *= r->value;
-                return left;
             }
             break;
         }
@@ -2010,17 +2037,13 @@ ExprPtr Compiler::visit_binary(BinaryExpr *node)
             {
                 NumberLiteral *l = static_cast<NumberLiteral *>(left.get());
                 NumberLiteral *r = static_cast<NumberLiteral *>(right.get());
-                //std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
-                //result->value = l->value /= r->value;
+                std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
                 if (r->value == 0)
                 {
                      throw FatalException("Division by zero");
                 }
-
-                l->value /= r->value;
-                return left;
-
-                //return result;
+                result->value = l->value /= r->value;
+                return result;
             }
             break;
         }
@@ -2170,19 +2193,18 @@ ExprPtr Compiler::visit_grouping(GroupingExpr *node)
 
 ExprPtr Compiler::visit_literal(Literal *node)
 {
-    std::shared_ptr<Literal> result =  std::make_shared<Literal>();
-    return result;
+    return NIL;
 }
 std::shared_ptr<Expr> Compiler::visit_number_literal(NumberLiteral *node)
 {
-    std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+    std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
     result->value = node->value;
     return result;
 }
 
 std::shared_ptr<Expr> Compiler::visit_string_literal(StringLiteral *node)
 {
-    std::shared_ptr<StringLiteral> result =  std::make_shared<StringLiteral>();
+    std::shared_ptr<StringLiteral> result =  Factory::as().getString();
     result->value = node->value;
     return result;
    
@@ -2714,7 +2736,7 @@ void Context::add(ExprPtr value,Literal *literal)
 
 void Context::clear()
 {
-    returns.clear();
+   // returns.clear();
     literals.clear();
     expressions.clear();
 }
@@ -2755,49 +2777,44 @@ bool Context::getBoolean(u8 index)
 }
 ExprPtr Context::asFloat(float value)
 {
-    std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+    std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
     result->value = static_cast<double>(value);
-    returns.push_back(result);
+  //  returns.push_back(result);
     return result;
 }
 
 ExprPtr Context::asDouble(double value)
 {
-    std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+    std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
     result->value = value;
-    returns.push_back(result);
     return result;
 }
 
 ExprPtr Context::asInt(int value)
 {
-    std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+    std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
     result->value = static_cast<double>(value);
-    returns.push_back(result);
     return result;
 }
 
 ExprPtr Context::asLong(long value)
 {
-    std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+    std::shared_ptr<NumberLiteral> result = Factory::as().getNumber();
     result->value = static_cast<double>(value);
-    returns.push_back(result);
     return result;
 }
 
 ExprPtr Context::asString(std::string value)
 {
-    std::shared_ptr<StringLiteral> result =  std::make_shared<StringLiteral>();
+    std::shared_ptr<StringLiteral> result =  Factory::as().getString();
     result->value = value;
-    returns.push_back(result);
     return result;
 }
 
 ExprPtr Context::asBoolean(bool value)
 {
-    std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
+     std::shared_ptr<NumberLiteral> result = Factory::as().getNumber();
     result->value = value ? 1 : 0;
-    returns.push_back(result);
     return result;
 }
 

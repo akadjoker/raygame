@@ -1,6 +1,7 @@
 #pragma once 
 #include "Token.hpp"
 #include <memory>
+#include "Utils.hpp"
 
 struct Visitor;
 
@@ -74,6 +75,7 @@ class BinaryExpr : public Expr
 {
 public:
     BinaryExpr() : Expr() { type = ExprType::BINARY; }
+   // ~BinaryExpr() { INFO("delete BinaryExpr()"); }
 
     ExprPtr accept( Visitor &v) override;
 
@@ -87,6 +89,7 @@ class UnaryExpr : public Expr
 {
 public:
     UnaryExpr() : Expr() { type = ExprType::UNARY; }
+  //  ~UnaryExpr() { INFO("delete UnaryExpr()"); }
 
     ExprPtr accept( Visitor &v) override;
 
@@ -99,6 +102,7 @@ class GroupingExpr : public Expr
 {
 public:
     GroupingExpr() : Expr() { type = ExprType::GROUPING; }
+ //   ~GroupingExpr() { INFO("delete GroupingExpr()"); }
 
     ExprPtr accept( Visitor &v) override;
 
@@ -109,6 +113,7 @@ class LogicalExpr : public Expr
 {
 public:
     LogicalExpr() : Expr() { type = ExprType::LOGICAL; }
+   // ~LogicalExpr() { INFO("delete LogicalExpr()"); }
 
     ExprPtr accept( Visitor &v) override;
 
@@ -127,7 +132,7 @@ public:
     Literal() : Expr() { type = ExprType::LITERAL;  }
 
     ExprPtr accept( Visitor &v) override;
-    virtual ~Literal() { }
+ //   virtual ~Literal() { INFO("delete Literal()"); }
     virtual void print() override;
 
     ExprPtr clone() override;
@@ -138,6 +143,7 @@ class NumberLiteral : public Literal
 {
 public:
     NumberLiteral() : Literal() { type = ExprType::L_NUMBER; }
+   // virtual ~NumberLiteral() { INFO("delete NumberLiteral(%f) ",value); }
 
 
 
@@ -167,6 +173,8 @@ class StringLiteral : public Literal
 {
 public:
     StringLiteral() : Literal() { type = ExprType::L_STRING; }
+
+   // virtual ~StringLiteral() { INFO("delete StringLiteral(%s) ",value.c_str()); }
  
     ExprPtr accept( Visitor &v) override;
 
@@ -201,7 +209,10 @@ class Variable : public Expr
 {
 public:
     Variable() : Expr() { type = ExprType::VARIABLE; }
+//    ~Variable() { INFO("delete Variable()"); }
+    
     ExprPtr accept( Visitor &v) override;
+
 
     Token name;
 };
@@ -211,6 +222,7 @@ class Assign : public Expr
 public:
     Assign() : Expr() { type = ExprType::ASSIGN; }
     ExprPtr accept( Visitor &v) override;
+  //  ~Assign() { INFO("delete Assign()"); }
 
     Token name;   
     ExprPtr value;
@@ -220,6 +232,7 @@ class CallExpr : public Expr
 {
 public:
     CallExpr() : Expr() { type = ExprType::CALL; }
+ //   ~CallExpr() { INFO("delete CallExpr()"); }
     ExprPtr accept( Visitor &v) override;
     Token name;
     ExprPtr callee;
@@ -232,6 +245,7 @@ class GetExpr : public Expr
 {
 public:
     GetExpr() : Expr() { type = ExprType::GET; }
+ //   ~GetExpr() { INFO("delete GetExpr()"); }
     ExprPtr accept( Visitor &v) override;
     Token name;
     ExprPtr object;
@@ -242,6 +256,7 @@ class GetDefinitionExpr : public Expr
 {
 public:
     GetDefinitionExpr() : Expr() { type = ExprType::GET_DEF; }
+    ~GetDefinitionExpr() { INFO("delete GetDefinitionExpr()"); }
     ExprPtr accept( Visitor &v) override;
     Token name;
     ExprPtr variable;
@@ -253,6 +268,7 @@ class SetExpr : public Expr
 {
 public:
     SetExpr() : Expr() { type = ExprType::SET; }
+   // ~SetExpr() { INFO("delete SetExpr()"); }
     ExprPtr accept( Visitor &v) override;
     Token name;
     ExprPtr object;

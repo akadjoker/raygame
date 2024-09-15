@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Parser.hpp"
 #include "Utils.hpp"
-
+#include "Interpreter.hpp"
 
 
 
@@ -191,7 +191,7 @@ ExprPtr Parser::assignment()
         {
             Variable *var = (Variable *)expr.get();
            
-            std::shared_ptr<Assign> assign = std::make_shared<Assign>();
+            std::shared_ptr<Assign> assign =  Factory::as().getAssign();
            assign->name = var->name;
            assign->value = value;
            expr = assign;
@@ -199,7 +199,7 @@ ExprPtr Parser::assignment()
         } else if (expr->type == ExprType::GET)
         {
             GetExpr *get = (GetExpr *)expr.get();
-            std::shared_ptr<SetExpr> set = std::make_shared<SetExpr>();
+            std::shared_ptr<SetExpr> set =  Factory::as().getSet();
             set->name  = get->name;
             set->object = get->object;
             set->value = value;
@@ -217,7 +217,7 @@ ExprPtr Parser::assignment()
         if (expr->type == ExprType::VARIABLE)
         {
             Variable *var = (Variable *)expr.get();
-            std::shared_ptr<Assign> assign = std::make_shared<Assign>();
+            std::shared_ptr<Assign> assign = Factory::as().getAssign();
             assign->name = var->name;
 
 
@@ -234,7 +234,7 @@ ExprPtr Parser::assignment()
         {
             
              GetExpr *get = (GetExpr *)expr.get(); //get value
-             std::shared_ptr<SetExpr> set = std::make_shared<SetExpr>(); //value to set
+             std::shared_ptr<SetExpr> set =  Factory::as().getSet();
              set->name   = get->name;
              set->object = get->object;
              std::shared_ptr<BinaryExpr> addition =  std::make_shared<BinaryExpr>();// expresion to add
@@ -254,7 +254,7 @@ ExprPtr Parser::assignment()
         if (expr->type == ExprType::VARIABLE)
         {
             Variable *var = (Variable *)expr.get();
-            std::shared_ptr<Assign> assign = std::make_shared<Assign>();
+            std::shared_ptr<Assign> assign = Factory::as().getAssign();
             assign->name = var->name;
             std::shared_ptr<BinaryExpr> addition =  std::make_shared<BinaryExpr>();
             addition->left  = expr;
@@ -266,7 +266,7 @@ ExprPtr Parser::assignment()
         {
 
              GetExpr *get = (GetExpr *)expr.get(); 
-             std::shared_ptr<SetExpr> set = std::make_shared<SetExpr>(); 
+             std::shared_ptr<SetExpr> set =  Factory::as().getSet();
              set->name   = get->name;
              set->object = get->object;
              std::shared_ptr<BinaryExpr> subtract =  std::make_shared<BinaryExpr>();
@@ -286,7 +286,7 @@ ExprPtr Parser::assignment()
         if (expr->type == ExprType::VARIABLE)
         {
             Variable *var = (Variable *)expr.get();
-            std::shared_ptr<Assign> assign =  std::make_shared<Assign>();
+            std::shared_ptr<Assign> assign =  Factory::as().getAssign();
             assign->name = var->name;
             std::shared_ptr<BinaryExpr> addition =  std::make_shared<BinaryExpr>();
             addition->left  = expr;
@@ -297,7 +297,7 @@ ExprPtr Parser::assignment()
         }   else if (expr->type == ExprType::GET)
         {
              GetExpr *get = (GetExpr *)expr.get(); 
-             std::shared_ptr<SetExpr> set = std::make_shared<SetExpr>(); 
+             std::shared_ptr<SetExpr> set =  Factory::as().getSet();
              set->name   = get->name;
              set->object = get->object;
              std::shared_ptr<BinaryExpr> subtract =  std::make_shared<BinaryExpr>();
@@ -317,7 +317,7 @@ ExprPtr Parser::assignment()
         if (expr->type == ExprType::VARIABLE)
         {
             Variable *var = (Variable *)expr.get();
-            std::shared_ptr<Assign> assign =  std::make_shared<Assign>();
+            std::shared_ptr<Assign> assign =  Factory::as().getAssign();
             assign->name = var->name;
             std::shared_ptr<BinaryExpr> addition =  std::make_shared<BinaryExpr>();
             addition->left  = expr;
@@ -329,7 +329,7 @@ ExprPtr Parser::assignment()
         {
 
              GetExpr *get = (GetExpr *)expr.get();
-             std::shared_ptr<SetExpr> set = std::make_shared<SetExpr>();
+             std::shared_ptr<SetExpr> set =     Factory::as().getSet();
              set->name   = get->name;
              set->object = get->object;
              std::shared_ptr<BinaryExpr> div =  std::make_shared<BinaryExpr>();
@@ -534,7 +534,7 @@ std::shared_ptr<Expr> Parser::call()
                 {
                         Token op = previous();
 
-                        std::shared_ptr<GetExpr> get =  std::make_shared<GetExpr>();
+                        std::shared_ptr<GetExpr> get =   Factory::as().getGet();
                         get->name = std::move(name);
                         get->object = std::move(expr);
                     
@@ -547,7 +547,7 @@ std::shared_ptr<Expr> Parser::call()
                 } else if (match(TokenType::DEC))
                 {
                         Token op = previous();
-                        std::shared_ptr<GetExpr> get =  std::make_shared<GetExpr>();
+                        std::shared_ptr<GetExpr> get =   Factory::as().getGet();
                         get->name = std::move(name);
                         get->object = std::move(expr);
                         std::shared_ptr<UnaryExpr> u_expr =   std::make_shared<UnaryExpr>();
@@ -560,7 +560,7 @@ std::shared_ptr<Expr> Parser::call()
 
 
 
-            std::shared_ptr<GetExpr> get =  std::make_shared<GetExpr>();
+            std::shared_ptr<GetExpr> get =   Factory::as().getGet();
             get->name = std::move(name);
             get->object = std::move(expr);
             return get;
@@ -576,7 +576,7 @@ std::shared_ptr<Expr> Parser::call()
 
 std::shared_ptr<Expr> Parser::function_call(std::shared_ptr<Expr> expr,  Token name )
 {
-    std::shared_ptr<CallExpr> f =  std::make_shared<CallExpr>();
+    std::shared_ptr<CallExpr> f =   Factory::as().getCall();
     if (!check(TokenType::RIGHT_PAREN))
     {
         do
@@ -608,13 +608,13 @@ std::shared_ptr<Expr> Parser::primary()
      if (match(TokenType::FALSE))
     {
         
-          std::shared_ptr<NumberLiteral> b =  std::make_shared<NumberLiteral>();
+          std::shared_ptr<NumberLiteral> b =  Factory::as().getNumber();
           b->value = 0;
           return b;
     }
     if (match(TokenType::TRUE))
     {
-          std::shared_ptr<NumberLiteral> b =    std::make_shared<NumberLiteral>();
+          std::shared_ptr<NumberLiteral> b =    Factory::as().getNumber();
           b->value = 1;
           return b;
     }
@@ -627,13 +627,13 @@ std::shared_ptr<Expr> Parser::primary()
 
     if (match(TokenType::STRING))
     {
-        std::shared_ptr<StringLiteral> s =    std::make_shared<StringLiteral>();
+        std::shared_ptr<StringLiteral> s =    Factory::as().getString();
         s->value = previous().literal;
         return s;
     }
     if (match(TokenType::NUMBER))
     {
-        std::shared_ptr<NumberLiteral> f =    std::make_shared<NumberLiteral>();
+        std::shared_ptr<NumberLiteral> f =    Factory::as().getNumber();
 
         f->value = std::stof(previous().literal);
         return f;
@@ -642,10 +642,10 @@ std::shared_ptr<Expr> Parser::primary()
     {
         return    std::make_shared<NowExpr>();
     }
-    if (match(TokenType::SELF))
-    {
-        return self_expr();
-    }
+    // if (match(TokenType::SELF))
+    // {
+    //     return self_expr();
+    // }
     // if (match(TokenType::SUPER))
     // {
     //     return super_expr();
@@ -891,6 +891,10 @@ StmtPtr Parser::statement()
     {
         return while_statement();
     }
+    if (match(TokenType::LOOP))
+    {
+        return loop_statement();
+    }
     if (match(TokenType::DO))
     {
         return do_statement();
@@ -1011,6 +1015,14 @@ StmtPtr Parser::do_statement()
     return stmt;    
 }
 
+StmtPtr Parser::loop_statement()
+{
+
+    std::shared_ptr<Stmt> body = statement();
+    std::shared_ptr<LoopStmt> stmt =    std::make_shared<LoopStmt>();
+    stmt->body = std::move(body);
+    return stmt;
+}
 
 StmtPtr Parser::from_statement()
 {

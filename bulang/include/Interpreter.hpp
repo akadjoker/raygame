@@ -118,6 +118,7 @@ struct Visitor
     virtual u8 visit_declaration(Declaration *node) = 0;
     virtual u8 visit_if(IFStmt *node) = 0;
     virtual u8 visit_while(WhileStmt *node) = 0;
+    virtual u8 visit_loop(LoopStmt *node) = 0;
     virtual u8 visit_do(DoStmt *node) = 0;
     virtual u8 visit_program(Program *node) = 0;
     virtual u8 visit_function(FunctionStmt *node) = 0;
@@ -237,7 +238,7 @@ private:
 
     void add(ExprPtr value, Literal *literal);
 
-    std::vector<ExprPtr> returns;
+   // std::vector<ExprPtr> returns;
     std::vector<Literal *> literals;
     std::vector<ExprPtr>   expressions;
     Interpreter *interpreter;
@@ -248,10 +249,74 @@ private:
 };
 
 
+class Factory
+{
+
+public:
+        Factory& operator=(const Factory&) = delete;
+        Factory& operator=(Factory&&) = delete;
+        static Factory &as();
+
+
+        std::shared_ptr<NumberLiteral> getNumber();
+        std::shared_ptr<StringLiteral> getString();
+        std::shared_ptr<CallExpr>      getCall();
+        std::shared_ptr<GetExpr>       getGet();
+        std::shared_ptr<Assign>        getAssign();
+        std::shared_ptr<SetExpr>       getSet();
 
 
 
 
+     
+        void recycle(NumberLiteral*  number);
+        void recycle(StringLiteral*  string);
+
+
+        NumberLiteral* newNumber();
+        StringLiteral* newString();
+        GetExpr* newGet();
+        CallExpr* newCall(); 
+        Assign* newAssign();
+        SetExpr* newSet();
+        
+        
+     
+
+        void freeCall(CallExpr* call);
+        void freeGet(GetExpr* get);
+        void freeAssign(Assign* assign);
+        void freeSet(SetExpr* set);
+        void freeNumber(NumberLiteral* number);
+        void freeString(StringLiteral* string);
+
+        Environment* newEnvironment( Environment *parent = nullptr);
+        std::shared_ptr<Environment> createEnvironment(Environment *parent = nullptr);
+        void freeEnvironment(Environment* environment);
+
+        u32 size() const;
+
+    private:
+        Factory();
+        ~Factory();
+
+        BlockArena arena;
+        StackArena stack;
+
+
+
+        std::vector<NumberLiteral*> numbers;
+        std::vector<StringLiteral*> strings;
+        std::vector<CallExpr*> calls;
+        std::vector<GetExpr*> gets;
+        std::vector<Assign*> assigns;
+        std::vector<SetExpr*> sets;
+
+
+
+     
+     
+};
 
 struct Compiler : public Visitor
 {
@@ -291,6 +356,7 @@ struct Compiler : public Visitor
     u8 visit_declaration(Declaration *node) override;
     u8 visit_if(IFStmt *node) override;
     u8 visit_while(WhileStmt *node) override;
+    u8 visit_loop(LoopStmt *node) override;
     u8 visit_for(ForStmt *node) override;
     u8 visit_from(FromStmt *node) override;
     u8 visit_do(DoStmt *node);
@@ -329,7 +395,7 @@ private:
   //  std::stack<Environment *> locals;
 
     std::shared_ptr<ClassLiteral> instance{nullptr};
-
+    std::shared_ptr<Literal> NIL{nullptr};
 
 
 

@@ -2,12 +2,12 @@
 #include "Arena.hpp"
 #include "Utils.hpp"
 
-static const u32 chunkSize = 16 * 1024;
-static const u32 maxBlockSize = 640;
-static const u32 chunkArrayIncrement = 128;
+static const s32 chunkSize = 16 * 1024;
+static const s32 maxBlockSize = 640;
+static const s32 chunkArrayIncrement = 128;
 
 // These are the supported object sizes. Actual allocations are rounded up the next size.
-static const u32 blockSizes[blockSizeCount] =
+static const s32 blockSizes[blockSizeCount] =
 	{
 		16,	 // 0
 		32,	 // 1
@@ -27,7 +27,7 @@ static const u32 blockSizes[blockSizeCount] =
 
 
 
-void *ArenaAlloc(u32 size)
+void *ArenaAlloc(s32 size)
 {
 	void *mem = malloc(size);
 
@@ -46,9 +46,9 @@ struct SizeMap
 {
 	SizeMap()
 	{
-		u32 j = 0;
+		s32 j = 0;
 		values[0] = 0;
-		for (u32 i = 1; i <= maxBlockSize; ++i)
+		for (s32 i = 1; i <= maxBlockSize; ++i)
 		{
 			assert(j < blockSizeCount);
 			if (i <= blockSizes[j])
@@ -70,7 +70,7 @@ static const SizeMap sizeMap;
 
 struct ArenaChunk
 {
-	u32 blockSize;
+	s32 blockSize;
 	ArenaBlock *blocks;
 };
 
@@ -96,7 +96,7 @@ BlockArena::BlockArena()
 
 BlockArena::~BlockArena()
 {
-	for (u32 i = 0; i < m_chunkCount; ++i)
+	for (s32 i = 0; i < m_chunkCount; ++i)
 	{
 		ArenaFree(m_chunks[i].blocks);
 	}
@@ -104,7 +104,7 @@ BlockArena::~BlockArena()
 	ArenaFree(m_chunks);
 }
 
-void *BlockArena::Allocate(u32 size)
+void *BlockArena::Allocate(s32 size)
 {
 	if (size == 0)
 	{
@@ -120,7 +120,7 @@ void *BlockArena::Allocate(u32 size)
 		return ArenaAlloc(size);
 	}
 
-	u32 index = sizeMap.values[size];
+	s32 index = sizeMap.values[size];
 	assert(0 <= index && index < blockSizeCount);
 
 	if (m_freeLists[index])
@@ -146,11 +146,11 @@ void *BlockArena::Allocate(u32 size)
 #if defined(_DEBUG)
 		memset(chunk->blocks, 0xcd, chunkSize);
 #endif
-		u32 blockSize = blockSizes[index];
+		s32 blockSize = blockSizes[index];
 		chunk->blockSize = blockSize;
-		u32 blockCount = chunkSize / blockSize;
+		s32 blockCount = chunkSize / blockSize;
 		assert(blockCount * blockSize <= chunkSize);
-		for (u32 i = 0; i < blockCount - 1; ++i)
+		for (s32 i = 0; i < blockCount - 1; ++i)
 		{
 			ArenaBlock *block = (ArenaBlock *)((c8 *)chunk->blocks + blockSize * i);
 			ArenaBlock *next = (ArenaBlock *)((c8 *)chunk->blocks + blockSize * (i + 1));
@@ -166,7 +166,7 @@ void *BlockArena::Allocate(u32 size)
 	}
 }
 
-void BlockArena::Free(void *p, u32 size)
+void BlockArena::Free(void *p, s32 size)
 {
 	if (size == 0)
 	{
@@ -184,14 +184,14 @@ void BlockArena::Free(void *p, u32 size)
 		return;
 	}
 
-	u32 index = sizeMap.values[size];
+	s32 index = sizeMap.values[size];
 	assert(0 <= index && index < blockSizeCount);
 
 #if defined(_DEBUG)
 	// Verify the memory address and size is valid.
-	u32 blockSize = blockSizes[index];
+	s32 blockSize = blockSizes[index];
 	bool found = false;
-	for (u32 i = 0; i < m_chunkCount; ++i)
+	for (s32 i = 0; i < m_chunkCount; ++i)
 	{
 		ArenaChunk *chunk = m_chunks + i;
 		if (chunk->blockSize != blockSize)
@@ -240,7 +240,7 @@ StackArena::~StackArena()
 	assert(m_entryCount == 0);
 }
 
-void *StackArena::Allocate(u32 size)
+void *StackArena::Allocate(s32 size)
 {
 	assert(m_entryCount < maxStackEntries);
 
@@ -284,7 +284,7 @@ void StackArena::Free(void *p)
 	p = nullptr;
 }
 
-u32 StackArena::GetMaxAllocation() const
+s32 StackArena::GetMaxAllocation() const
 {
 	return m_maxAllocation;
 }
