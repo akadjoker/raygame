@@ -21,10 +21,9 @@ private:
     std::vector<Token> tokens;
     std::unordered_map<std::string, TokenType> keywords;
 
-    int blocks;   // begin end
-    int brackets; // []
-    int braces;   // {}
-    int parens;   // ()
+    int brackets{0}; // []
+    int braces{0};   // {}
+    int parens{0};   // ()
 
 
     char peek();

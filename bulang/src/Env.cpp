@@ -34,6 +34,12 @@ Environment::~Environment()
 void Environment::print()
 {
 
+    if (parent != nullptr)
+    {
+        INFO("Parent: %d", parent->getDepth());
+        parent->print();
+    }
+    INFO("Environment: %d", depth);
     for (auto it = m_values.begin(); it != m_values.end(); it++)
     {
         ExprPtr l = it->second;
@@ -221,7 +227,32 @@ bool Environment::copy(Environment *env)
 {
     if (env == nullptr)
         return false;
-    this->m_values = env->m_values;
+    for (auto it = env->m_values.begin(); it != env->m_values.end(); it++)
+    {
+        if (it->second->type == ExprType::L_FUNCTION || it->second->type == ExprType::L_NATIVE)
+        {
+            define(it->first, it->second);
+        } 
+        else
+            define(it->first, it->second->clone());
+    }
+    return true;
+    
+}
+
+bool Environment::assign_scope(Environment *env)
+{
+    if (env == nullptr)
+        return false;
+    for (auto it = env->m_values.begin(); it != env->m_values.end(); it++)
+    {
+         if (it->second->type != ExprType::L_FUNCTION && it->second->type != ExprType::L_NATIVE)
+        {
+            define(it->first, it->second);
+        } 
+            //define(it->first, it->second);
+       
+    }
     return true;
     
 }
@@ -230,8 +261,10 @@ std::shared_ptr<Environment> Environment::clone()
     std::shared_ptr<Environment>  env = std::make_shared<Environment>(parent);
     for (auto it = m_values.begin(); it != m_values.end(); it++)
     {
-        if (it->second->type == ExprType::L_FUNCTION)
+        if (it->second->type == ExprType::L_FUNCTION || it->second->type == ExprType::L_NATIVE)
+        {
             env->define(it->first, it->second);
+        }
         else 
             env->define(it->first, it->second->clone());
     }

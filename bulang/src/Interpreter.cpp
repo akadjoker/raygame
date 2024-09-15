@@ -66,19 +66,21 @@ ExprPtr Compiler::evaluate(ExprPtr node)
 
 ExprPtr Compiler::visit_call_native(CallExpr *node)
 {
- //   INFO("CALL: %s ",node->name.lexeme.c_str());
+  //  INFO("CALL: %s ",node->name.lexeme.c_str());
 
     interpreter->context->clear();
     for (u32 i = 0; i < node->args.size(); i++)
     {
-        ExprPtr arg = evaluate(node->args[i]);
-        Literal *l = static_cast<Literal *>(arg.get());
-        interpreter->context->add(std::move(arg),l);
+         ExprPtr arg = evaluate(node->args[i]);
+         Literal *l = static_cast<Literal *>(arg.get());
+         interpreter->context->add(std::move(arg),l);
         
     }
     ExprPtr  result = interpreter->CallNativeFunction(node->name.lexeme,(int) node->args.size());
 
     return result;
+
+    return std::make_shared<Literal>();
 }
 ExprPtr Compiler::visit_call_struct(const ExprPtr &var,CallExpr *node,Expr *expr) 
 {
@@ -174,76 +176,86 @@ ExprPtr Compiler::visit_call_class(const ExprPtr &result,CallExpr *node, Expr *c
 
     std::shared_ptr<ClassLiteral> s = std::make_shared<ClassLiteral>(); 
     s->name        = node->name.lexeme;
-    
- 
 
 
-    if (main->isChild)
+     if (main->isChild)
     {       
         ClassLiteral *p = static_cast<ClassLiteral *>(parent.get());
-        s->environment= new Environment(p->environment);
+
+        main->base = std::make_shared<ClassLiteral>(); 
+        main->base->name = p->name;
+
+
+        main->base->environment= new Environment(global.get());
+        main->base->environment->copy(p->environment);
+
+
+
+        s->environment = new Environment(main->base->environment);
+
+   
+         const std::unordered_map<std::string, ExprPtr> main_members = main->environment->values();
+
+        for (auto it = main_members.begin(); it != main_members.end(); it++)
+        {
+                if (it->second->type == ExprType::L_FUNCTION || it->second->type == ExprType::L_NATIVE)
+                    s->environment->define(it->first, it->second);
+                else
+                    s->environment->define(it->first, it->second->clone());
+        }
+
+        s->environment->define("super", main->base);
+       // s->environment->print();
+
+
     } else 
     {
-        s->environment= new Environment(environment);
-        
+        s->environment= new Environment(global.get());
+        s->environment->copy(main->environment);
     }
+   
+        
+    
 
-    s->environment->copy(main->environment);
-
-  //  s->environment->define("self", s);
-
-
-
+    
 
 
-   // std::shared_ptr<SelfExpr> self = std::make_shared<SelfExpr>();
-   // self->parent = s;
 
- //   s->environment->define("self", s);
+      
 
-    if (main->isChild)
-    {       
-        s->environment->define("super", parent);
-    } 
-
-
-    if (!node->args.empty())
-    {   
 
          if (s->environment->contains("init"))
          {
-            ExprPtr value = s->environment->get("init");
-            if (value->type == ExprType::L_FUNCTION)
-            {
+                  
 
-                instance= s;    
+                    ExprPtr value = s->environment->get("init");
+                    if (value->type == ExprType::L_FUNCTION)
+                    {
 
-                prefEnv = s->environment;
-                std::shared_ptr<CallExpr> call = std::make_shared<CallExpr>();
-                call->name = node->name;
-                call->callee = value;
-                call->args = std::move(node->args);
-                try
-                {
-                     visit_call_function_member(call.get(), value.get(), s.get());
-                }
-                catch(const std::exception& e)
-                {
-                    ERROR("Fail call init ");
-                    
-                }
-                
-                instance= nullptr;
-                   
-                prefEnv = nullptr;
+                        instance = s;
+                      //  prefEnv = s->environment;
+                        std::shared_ptr<CallExpr> call = std::make_shared<CallExpr>();
+                        call->name = node->name;
+                        call->callee = value;
+                        call->args =node->args;
+                        try
+                        {
+                            visit_call_function_member(call.get(), value.get(), s.get());
+                        }
+                        catch(const std::exception& e)
+                        {
+                            ERROR("Fail call init on class '%s' %s",  node->name.lexeme.c_str(), e.what());   
 
-            } else 
-            {
-                ERROR("Function constructor init not found in class");
-            }
+                        }
+                        instance = nullptr;
+                      //  prefEnv = nullptr;
+                    }
+
         }
 
-    }
+       
+
+    
     return s;
 }
 
@@ -260,6 +272,11 @@ ExprPtr Compiler::visit_call(CallExpr *node)
 
 
     ExprPtr var = environment->get(node->name.lexeme);
+    if (var == nullptr)
+    {
+        throw FatalException("Undefined variable '" + node->name.lexeme + "' at line "+ std::to_string(node->name.line ));
+    }
+
     if (var->type == ExprType::L_STRUCT)
     {
         return visit_call_struct(var,node, callee.get());
@@ -348,8 +365,20 @@ ExprPtr Compiler::ProcessArray(Expr *var, GetDefinitionExpr *node)
                 for (u32 i = 0; i < node->values.size(); i++)
                 {
                     ExprPtr value = evaluate(node->values[i]);
-                    ExprPtr clone = value->clone();
-                    array->values.push_back(std::move(clone));
+                    
+                    if (value->type == ExprType::L_FUNCTION || value->type == ExprType::L_NATIVE)
+                    {
+                       array->values.push_back(value);
+                    }else if (value->type == ExprType::L_CLASS)
+                    {
+                      array->values.push_back(std::move(value));
+                    }
+                    else 
+                    {
+                       array->values.push_back(std::move(value->clone()));
+                    }
+                    
+                  
                 }
                 return expr;
   
@@ -676,12 +705,12 @@ ExprPtr Compiler::visit_call_function_member(CallExpr *node,Expr *callee, ClassL
 
 
     std::shared_ptr<Environment>  local = std::make_shared<Environment>(main->environment);
-    local->define("self", instance);
+ //   local->define("self", instance);
     
     for (u32 i = 0; i < node->args.size(); i++)
     {
         ExprPtr arg = evaluate(node->args[i]);
-        if (!local->define(function->args[i], std::move(arg)))
+        if (!local->define(function->args[i], arg))
         {
             throw FatalException("Duplicate identifier from argumnts");
         }
@@ -699,6 +728,7 @@ ExprPtr Compiler::visit_call_function_member(CallExpr *node,Expr *callee, ClassL
     }  
     catch (const std::exception &e)
     {
+        ERROR("execute class function : %s", e.what());
         throw e;
     }
 
@@ -711,65 +741,68 @@ ExprPtr Compiler::visit_call_function_member(CallExpr *node,Expr *callee, ClassL
      return result;
 }
 
-ExprPtr Compiler::ProcessClass(Expr *var, GetDefinitionExpr *node)//call_function member
+ExprPtr Compiler::ProcessClass(const ExprPtr &var, GetDefinitionExpr *node)//call_function member
 {
-        ClassLiteral *classl = static_cast<ClassLiteral *>(var);
-        if (!classl)
+    //var variable from script 
+        ClassLiteral *main = static_cast<ClassLiteral *>(var.get()); //real var
+        if (!main)
         {
-            ERROR("Class '%s' not found: " ,node->name.lexeme.c_str());
-            return  std::make_shared<Literal>();
+            throw FatalException("Class not found"+ node->name.lexeme);
+
         }
+
+        
+       
 
         std::string action = node->name.lexeme;
 
-     //   INFO("Get Class: %s function %s", classl->name.c_str(), action.c_str());
+   //     INFO("Get Class: %s function %s", main->name.c_str(), action.c_str());
 
+        if (!main->environment->contains(action))
+        {
+            throw FatalException("Function '" + action + "' not found in class");
+        }
 
-        ExprPtr value = classl->environment->get(action);
+        ExprPtr value = main->environment->get(action);
         if (!value)  
         {
-           ERROR("Function '%s' not found in class" ,action.c_str());
-           return  std::make_shared<Literal>();
+            throw FatalException("Function '" + action + "' not found in class");
         }
-        if (value->type == ExprType::L_FUNCTION)
+        if (value->type != ExprType::L_FUNCTION)
         {
+            throw FatalException("Function '" + action + "' not found in class");
+        }
+
+      //  INFO("Get Class: %s function %s", classl->name.c_str(),value->toString().c_str());
+
             ExprPtr result = nullptr;
-            prefEnv = classl->environment;
+            instance = std::dynamic_pointer_cast<ClassLiteral>(var);
             std::shared_ptr<CallExpr> call = std::make_shared<CallExpr>();
             call->name = node->name;
             call->callee = value;
             call->args = node->values;
-
-          
-
             try
             {
-                result = visit_call_function_member(call.get(), value.get(), classl);
+               result = visit_call_function_member(call.get(), value.get(), main);
             }
             catch (const std::exception &e)
             {
-                ERROR("Fail  to execute '%s' function", action.c_str());
-                return  std::make_shared<Literal>();
+             //   ERROR("Fail  to execute '%s' function", action.c_str());
+                
             }
 
 
-            instance= nullptr;
-            prefEnv = nullptr;
+            instance=nullptr;
             return result;
-        } else 
-        {
-            ERROR("Function '%s' not found in class" ,action.c_str());
-        }
+   
 
-
-        return  std::make_shared<Literal>();
 }
     
 
 ExprPtr Compiler::visit_get_definition(GetDefinitionExpr *node)
 {
 
-    //  INFO("GET Built int defenition: %s ", node->name.lexeme.c_str());
+   //  INFO("GET Built int defenition: %s ", node->name.lexeme.c_str());
  
 
     ExprPtr var     = evaluate(node->variable);    
@@ -784,7 +817,7 @@ ExprPtr Compiler::visit_get_definition(GetDefinitionExpr *node)
     {
 
 
-        return ProcessClass(var.get(), node);
+        return ProcessClass(var, node);
     } else if (var->type == ExprType::L_STRING)
     {
         return ProcessString(var.get(), node);
@@ -871,7 +904,7 @@ ExprPtr Compiler::visit_super(SuperExpr *node)
         ERROR("Super must be call from a child class");
         return  std::make_shared<Literal>();
     }
-    return instance;
+    return instance->base;
 }
 
 ExprPtr Compiler::visit_set(SetExpr *node)
@@ -903,15 +936,12 @@ ExprPtr Compiler::visit_set(SetExpr *node)
     } else if (object->type == ExprType::L_CLASS)
     {
         std::string action = node->name.lexeme;
-       // WARNING("TODO Class SET: %s", action.c_str());
-        
         ClassLiteral *cl = static_cast<ClassLiteral *>(object.get());
         ExprPtr key = cl->environment->get(action);
-
         if (key)
         {
                ExprPtr value = evaluate(node->value);
-               cl->environment->set(action, std::move(value));
+               cl->environment->set(action, std::move(value));//move or not to move
            
         }   else 
         {
@@ -949,18 +979,20 @@ u8 Compiler::execute(Stmt *stmt)
 
 void Compiler::clear()
 {
-
+    
 }
 
 u8 Compiler::execte_block(BlockStmt *node, Environment *env)
 {
     u8 result = 0;
     auto previousEnvironment = environment;
+    
     environment = env;
     try
     {
         for (auto &s : node->statements)
         {
+          
             result |=  execute(s.get());
         }
     } 
@@ -979,13 +1011,20 @@ u8 Compiler::visit_block_smt(BlockStmt *node)
     if (!node) return  0;
 
     Environment * prev = environment;
- 
+    u8 result = 0;
+
     std::shared_ptr<Environment> env = std::make_shared<Environment>(environment);
     
-
-   
-    u8 result = execte_block(node, env.get());
-
+        try 
+        {
+        
+            result = execte_block(node, env.get());
+        }
+        catch (const FatalException &e)
+        {
+            environment = prev;
+            throw e;
+        }
     
     environment = prev;
 
@@ -1071,22 +1110,19 @@ ExprPtr Compiler::visit_read_variable(Variable *node)
     ExprPtr result = environment->get(node->name.lexeme);
     if (result == nullptr)
     {
-        if (prefEnv != nullptr)
-        {
-            result= prefEnv->get(node->name.lexeme);
-            if (result != nullptr) return result;
-        } 
-    
+
+
+        // if (prefEnv != nullptr)
+        // {
+        //     result= prefEnv->get(node->name.lexeme);
+        //     if (result != nullptr) return result;
+        // } 
+
+        // result = global->get(node->name.lexeme);
+        // if (result != nullptr) return result;    
 
         throw FatalException("Undefined variable: '" + node->name.lexeme +"' at line "+ std::to_string(node->name.line ));
     }
-    // if (result->type == ExprType::LITERAL)
-    // {
-    //   WARNING("Variable: %s is not initialized", node->name.lexeme.c_str());
-    // }
-
-
-  //  printf("read Variable: %x get\n", &result);
 
     return result;
 }
@@ -1367,7 +1403,6 @@ u8 Compiler::visit_class(ClassStmt *node)
     
     std::shared_ptr<ClassLiteral> cl = std::make_shared<ClassLiteral>();
     cl->environment= new Environment(environment);
-    
     cl->name = node->name.lexeme;
 
     environment = cl->environment;
@@ -1407,13 +1442,12 @@ u8 Compiler::visit_class(ClassStmt *node)
     }
 
     
-   // cl->environment->copy(std::move(local->values()));
 
 
 
 
     environment = previousEnvironment;
-    environment->define(node->name.lexeme, cl);
+    environment->define(node->name.lexeme, std::move(cl));
 
    
 
@@ -1678,7 +1712,7 @@ Compiler::Compiler(Interpreter *i, Compiler *c)
     global->define("string", std::make_shared<StringLiteral>());
     global->define("number", std::make_shared<NumberLiteral>());
     environment= global.get();
-    prefEnv = nullptr;
+   // prefEnv = nullptr;
     instance = nullptr;
 
 }
@@ -1693,7 +1727,7 @@ Compiler::~Compiler()
  
     environment = nullptr;
     instance = nullptr;
-    prefEnv = nullptr;
+   // prefEnv = nullptr;
    
 }
 
@@ -2354,13 +2388,14 @@ ClassLiteral::ClassLiteral()
     name = "";
     parentName = "";
     isChild = false;
-   
+
     environment = nullptr;
 }
 
 ClassLiteral::~ClassLiteral()
 {
-   INFO("Class deleted: %s", name.c_str());
+ //  INFO("Class deleted: %s", name.c_str());
+
    environment->remove("self");
    delete environment;
    environment = nullptr;
@@ -2381,16 +2416,13 @@ ExprPtr ClassLiteral::clone()
 {
     std::shared_ptr<ClassLiteral> cl = std::make_shared<ClassLiteral>();
     cl->name = name;
+    cl->parentName = parentName;
+    cl->isChild = isChild;
     
     if (this->environment)
     {
         cl->environment =  new Environment(this->environment->getParent());
-        
-        const std::unordered_map<std::string, ExprPtr > values = this->environment->values();
-        for (auto it = values.begin(); it != values.end(); it++)
-        {
-          cl->environment->define(it->first, it->second);
-        }
+        cl->environment->copy(this->environment);   
     }
     return cl;
 }
@@ -2552,43 +2584,44 @@ std::string BuilArray(ArrayLiteral *al)
 std::string BuildClass(ClassLiteral *cl)
 {
     std::string s ="Class :"+ cl->name;
-    // auto list  =    cl->environment->values();
-    // auto it = list.begin();
-    // while (it != list.end())
-    // {
-    //     std::string name = it->first;
-    //     s += "("+ name +")";
-    //     // ExprPtr expr = it->second;
-    //     // if (expr->type == ExprType::L_STRUCT)
-    //     // {
-    //     //     StructLiteral *sl = static_cast<StructLiteral *>(expr);
-    //     //     s += BuilStruct(sl);
-    //     // } else if (expr->type == ExprType::L_ARRAY)
-    //     // {
-    //     //     ArrayLiteral *al = static_cast<ArrayLiteral *>(expr);
-    //     //     s += BuilArray(al);
-    //     // } else if (expr->type == ExprType::L_MAP)
-    //     // {
-    //     //     MapLiteral *ml = static_cast<MapLiteral *>(expr);
-    //     //     s += BuilMap(ml);
-    //     // }   else 
-    //     // if (expr->type == ExprType::L_NUMBER)
-    //     // {
-    //     //     NumberLiteral *nl = static_cast<NumberLiteral *>(expr);
-    //     //     s +=  std::to_string(nl->value) + ")";
-    //     // } else if (expr->type == ExprType::L_STRING)
-    //     //  {
-    //     //      StringLiteral *sl = static_cast<StringLiteral *>(expr);
-    //     //      s += sl->value + ")";
-    //     //  }
-    //      // else if (expr->type == ExprType::L_CLASS)
-    //     // {
-    //     //     ClassLiteral *cl = static_cast<ClassLiteral *>(expr);
-    //     //     s += BuildClass(cl);
-    //     // }
+    auto list  =    cl->environment->values();
+    auto it = list.begin();
+    while (it != list.end())
+    {
+        std::string name = it->first;
+        s += "("+ name +" ";
+        ExprPtr expr = it->second;
+        if (expr->type == ExprType::L_STRUCT)
+        {
+            StructLiteral *sl = static_cast<StructLiteral *>(expr.get());
+            s += BuilStruct(sl);
+        } else if (expr->type == ExprType::L_ARRAY)
+        {
+            ArrayLiteral *al = static_cast<ArrayLiteral *>(expr.get());
+            s += BuilArray(al);
+        } else if (expr->type == ExprType::L_MAP)
+        {
+            MapLiteral *ml = static_cast<MapLiteral *>(expr.get());
+            s += BuilMap(ml);
+        }   else 
+        if (expr->type == ExprType::L_NUMBER)
+        {
+            NumberLiteral *nl = static_cast<NumberLiteral *>(expr.get());
+            s +=  std::to_string(nl->value) + ")";
+        } else if (expr->type == ExprType::L_STRING)
+         {
+             StringLiteral *sl = static_cast<StringLiteral *>(expr.get());
+             s += sl->value + ")";
+         }
+         else if (expr->type == ExprType::L_CLASS)
+        {
+            ClassLiteral *cl = static_cast<ClassLiteral *>(expr.get());
+            s += BuildClass(cl);
+        }
+        s+" )";
 
-    //     it++;
-    // }
+        it++;
+    }
     return s;
 }
 
@@ -2681,7 +2714,7 @@ void Context::add(ExprPtr value,Literal *literal)
 
 void Context::clear()
 {
-    values.clear();
+    returns.clear();
     literals.clear();
     expressions.clear();
 }
@@ -2724,7 +2757,7 @@ ExprPtr Context::asFloat(float value)
 {
     std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
     result->value = static_cast<double>(value);
-    values.push_back(result);
+    returns.push_back(result);
     return result;
 }
 
@@ -2732,7 +2765,7 @@ ExprPtr Context::asDouble(double value)
 {
     std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
     result->value = value;
-    values.push_back(result);
+    returns.push_back(result);
     return result;
 }
 
@@ -2740,7 +2773,7 @@ ExprPtr Context::asInt(int value)
 {
     std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
     result->value = static_cast<double>(value);
-    values.push_back(result);
+    returns.push_back(result);
     return result;
 }
 
@@ -2748,7 +2781,7 @@ ExprPtr Context::asLong(long value)
 {
     std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
     result->value = static_cast<double>(value);
-    values.push_back(result);
+    returns.push_back(result);
     return result;
 }
 
@@ -2756,7 +2789,7 @@ ExprPtr Context::asString(std::string value)
 {
     std::shared_ptr<StringLiteral> result =  std::make_shared<StringLiteral>();
     result->value = value;
-    values.push_back(result);
+    returns.push_back(result);
     return result;
 }
 
@@ -2764,7 +2797,7 @@ ExprPtr Context::asBoolean(bool value)
 {
     std::shared_ptr<NumberLiteral> result =  std::make_shared<NumberLiteral>();
     result->value = value ? 1 : 0;
-    values.push_back(result);
+    returns.push_back(result);
     return result;
 }
 

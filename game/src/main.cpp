@@ -111,7 +111,7 @@ int main()
 {
 
 
-    std::string code = readFile("game.pc");
+    std::string code = readFile("noide.bu");
     if (code.length() == 0)
     {
         return 0;

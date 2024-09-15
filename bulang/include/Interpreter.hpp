@@ -44,7 +44,8 @@ struct ClassLiteral : public Literal
     bool isChild;
     Environment *environment;
 
-    
+    std::shared_ptr<ClassLiteral> base;
+
     ClassLiteral();
     virtual ~ClassLiteral();
     void print();
@@ -172,7 +173,8 @@ public:
 
 
     bool copy(std::unordered_map<std::string, ExprPtr> values);
-    bool copy(Environment *environment); 
+    bool copy(Environment *environment);
+    bool assign_scope(Environment *env);
 
     std::shared_ptr<Environment> clone();
 
@@ -183,6 +185,21 @@ public:
     Environment* getParent() { return parent; }
 
     u32 getDepth() const { return depth; }
+};
+
+
+struct EnvironmentRestorer
+{
+    std::shared_ptr<Environment> &currentEnvironment;
+    std::shared_ptr<Environment> previousEnvironment;
+
+    EnvironmentRestorer(std::shared_ptr<Environment> &env, std::shared_ptr<Environment> prevEnv)
+        : currentEnvironment(env), previousEnvironment(prevEnv) {}
+
+    ~EnvironmentRestorer()
+    {
+        currentEnvironment = previousEnvironment;
+    }
 };
 
 class Context
@@ -220,7 +237,7 @@ private:
 
     void add(ExprPtr value, Literal *literal);
 
-    std::vector<ExprPtr> values;
+    std::vector<ExprPtr> returns;
     std::vector<Literal *> literals;
     std::vector<ExprPtr>   expressions;
     Interpreter *interpreter;
@@ -293,7 +310,7 @@ struct Compiler : public Visitor
     ExprPtr ProcessString(Expr *var, GetDefinitionExpr *node);
     ExprPtr ProcessArray(Expr *var, GetDefinitionExpr *node);
     ExprPtr ProcessMap(Expr *var, GetDefinitionExpr *node);
-    ExprPtr ProcessClass(Expr *var, GetDefinitionExpr *node);
+    ExprPtr ProcessClass(const ExprPtr &var, GetDefinitionExpr *node);
     ExprPtr visit_call_function_member(CallExpr *node, Expr *callee, ClassLiteral *main);
 
     u8 execte_block(BlockStmt *node, Environment *env);
@@ -306,12 +323,16 @@ private:
     Interpreter *interpreter;
     Environment *environment;
     std::shared_ptr<Environment> global;
-    Environment *prefEnv;
+  //  Environment *prefEnv;
     Compiler *parent;
     u32 loop_count = 0;
-    std::stack<Environment *> locals;
+  //  std::stack<Environment *> locals;
 
-    std::shared_ptr<ClassLiteral> instance;
+    std::shared_ptr<ClassLiteral> instance{nullptr};
+
+
+
+
 
 
     void pop_local();

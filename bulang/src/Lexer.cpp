@@ -215,24 +215,20 @@ bool Lexer::ready()
     Log(2, "Input is empty");
     return false;
   }
-  if (blocks > 0)
+
+  if (brackets != 0)
   {
-    Log(2, "Blocks 'begin' 'end' not closed");
+    Log(2, "Brackets miss matched");
     return false;
   }
-  if (brackets > 0)
+  if (braces != 0)
   {
-    Log(2, "Brackets not closed");
+    Log(2, "Braces miss matched");
     return false;
   }
-  if (braces > 0)
+  if (parens != 0)
   {
-    Log(2, "Braces not closed");
-    return false;
-  }
-  if (parens > 0)
-  {
-    Log(2, "Parens not closed");
+    Log(2, "Parens miss matched");
     return false;
   }
   return true;
@@ -246,7 +242,6 @@ void Lexer::clear()
   current = 0;
   line = 1;
   tokens.clear();
-  blocks = 0;
   brackets = 0;
   braces = 0;
   parens = 0;
@@ -274,6 +269,13 @@ std::vector<Token> Lexer::GetTokens()
       tokens.push_back(token);
       return tokens;
     }
+  }
+  if (!ready())
+  {
+    tokens.clear();
+    auto token = Token(TokenType::ERROR, "Error", "Parse error", 0);
+    tokens.push_back(token);
+    return tokens;
   }
   auto token = Token(TokenType::END_OF_FILE, "EOF", "", line);
   tokens.push_back(token);
@@ -485,14 +487,6 @@ void Lexer::number()
 
 void Lexer::addToken(TokenType type, const std::string &literal)
 {
-  if (type == TokenType::LEFT_BRACE)
-  {
-    blocks++;
-  }
-  if (type == TokenType::RIGHT_BRACE)
-  {
-    blocks--;
-  }
   std::string text = input.substr(start, current - start);
   Token token = Token(type, text, literal, line);
   tokens.push_back(token);
