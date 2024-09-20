@@ -205,9 +205,9 @@ class Steroid : Node
         if (x >SCREEN_WIDTH+15)
         {
             x-=SCREEN_WIDTH-32;
-        } 
+        } else
         
-        if(x<=-15)
+        if(x<=-35)
         {
             x+=SCREEN_WIDTH+32;
         }
@@ -216,7 +216,7 @@ class Steroid : Node
         if (y >SCREEN_HEIGHT+15)
         {
             y-=SCREEN_HEIGHT-32;
-        } 
+        } else
         
         if(y<=-15)
         {
