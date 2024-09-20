@@ -864,7 +864,7 @@ ExprPtr Compiler::visit_get(GetExpr *node)
         ExprPtr key = cl->environment->get(action);
         if (key)
         {
-            return key;
+            return key->clone();
            
         }   else 
         {
@@ -949,7 +949,7 @@ ExprPtr Compiler::visit_set(SetExpr *node)
                //  WARNING("TODO class SET: %s", node->name.lexeme.c_str());
 
                ExprPtr value = evaluate(node->value);
-               cl->environment->set(action, value);//move or not to move
+               cl->environment->set(action, value->clone());//move or not to move
            
         }   else 
         {
@@ -2103,11 +2103,20 @@ ExprPtr Compiler::visit_unary(UnaryExpr *expr)
                 NumberLiteral *num = static_cast<NumberLiteral *>(right.get());
                 if (expr->isPrefix)
                 {
-                   ++num->value;
+                    double value = ++num->value;
+                   //++num->value;
+                   std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
+                   result->value = value;
+                   return result;
                 }
                 else
                 {
-                    num->value++;
+                    double value = num->value++;
+                    std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
+                    result->value = value;
+                    return result;
+
+                   // num->value++;
                 }
 
                 return right;
@@ -2122,12 +2131,20 @@ ExprPtr Compiler::visit_unary(UnaryExpr *expr)
                 
                 if (expr->isPrefix)
                 {
-                     --num->value;
+                    double value = --num->value;
+                    std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
+                    result->value = value;
+                    return result;
+                   //  --num->value;
                 }
                 else
                 {
+                    double value = num->value--;
+                    std::shared_ptr<NumberLiteral> result =  Factory::as().getNumber();
+                    result->value = value;
+                    return result;
                     
-                    num->value--;
+                    //num->value--;
                 }
                 return right;
             }

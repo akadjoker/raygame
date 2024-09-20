@@ -103,8 +103,7 @@ class Node
     {
         self.x=x;
         self.y=y;
-        self.id = node_id;
-        node_id = node_id + 1;
+        self.id = node_id++;
     }
     def update(dt)
     {
@@ -142,7 +141,7 @@ class Bunny : Node
       super.init(x,y);
       speed_x=Random()*2.0;
       speed_y=Random()*5-2.5;
-      life   =Random(500,1000);
+      life   =Random(500,800);
 
       if (Random(0,100)>50)
       {
@@ -193,13 +192,13 @@ class Bunny : Node
         mask.x=x;
         mask.y=y;
         //if (life<=0)
-       //     kill();          
+        ///    kill();          
         
     }
 
      def collision(with)
     {
-         DrawCircle(self.x,self.y,10,true);
+         DrawCircle(self.x,self.y,mask.radius,true);
          alert=1;
     }
 
@@ -214,6 +213,7 @@ class Bunny : Node
 
         alert=0;
         DrawImage(0,x,y);
+      //  DrawText(x,y-60,22,id);
     }
 
   
@@ -258,21 +258,21 @@ class Scene
     }
     def collisions()
     {
-        var i=  0;
-        var j = 1;
+
         var count = lista.size();
         if (count==0) return false;
-
+        var i=  0;
+        var j = 0;
         while(i<count)
         {
             
-            j= i + 1;
+          
             var a = lista.at(i);
-
+            j= i + 1;    
             while(j<count)
             {
                 var b = lista.at(j);
-                if (a.id==b.id) continue;
+               // if (a.id==b.id) continue;
                 if (a.collide(b))
                 {
                     a.collision(b);
@@ -314,22 +314,22 @@ loop
     var mouse_y= GetMouseY(); 
 
 
-    if (MouseDown(0))
+    if (MousePress(0))
     {
            
            var n = Bunny(mouse_x,mouse_y);
            scene.add(n);
      
     }
-    if (GetFPS()>=30)
+    if (GetFPS()>=60)
     {
        /*
         for (var j=0;j<50;j=j+1)
         {
            var n = Bunny(mouse_x,mouse_y);
            scene.add(n);
-        }
-        */
+        }*/
+        
     }
 
 
@@ -341,7 +341,7 @@ loop
 
 
     scene.update(deltaTime);
-    //scene.collisions();
+    scene.collisions();
 
 
 

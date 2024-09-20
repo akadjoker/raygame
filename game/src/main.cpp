@@ -111,7 +111,7 @@ int main()
 {
 
 
-    std::string code = readFile("noide.bu");
+    std::string code = readFile("steroid.bu");
     if (code.length() == 0)
     {
         return 0;

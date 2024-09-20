@@ -268,29 +268,7 @@ public:
 
 
 
-     
-        void recycle(NumberLiteral*  number);
-        void recycle(StringLiteral*  string);
 
-
-        NumberLiteral* newNumber();
-        StringLiteral* newString();
-        GetExpr* newGet();
-        CallExpr* newCall(); 
-        Assign* newAssign();
-        SetExpr* newSet();
-        
-        
-     
-
-        void freeCall(CallExpr* call);
-        void freeGet(GetExpr* get);
-        void freeAssign(Assign* assign);
-        void freeSet(SetExpr* set);
-        void freeNumber(NumberLiteral* number);
-        void freeString(StringLiteral* string);
-
-        Environment* newEnvironment( Environment *parent = nullptr);
         std::shared_ptr<Environment> createEnvironment(Environment *parent = nullptr);
         void freeEnvironment(Environment* environment);
 
@@ -300,17 +278,8 @@ public:
         Factory();
         ~Factory();
 
-        BlockArena arena;
-        StackArena stack;
 
 
-
-        std::vector<NumberLiteral*> numbers;
-        std::vector<StringLiteral*> strings;
-        std::vector<CallExpr*> calls;
-        std::vector<GetExpr*> gets;
-        std::vector<Assign*> assigns;
-        std::vector<SetExpr*> sets;
 
 
 
@@ -389,10 +358,10 @@ private:
     Interpreter *interpreter;
     Environment *environment;
     std::shared_ptr<Environment> global;
-  //  Environment *prefEnv;
+
     Compiler *parent;
     u32 loop_count = 0;
-  //  std::stack<Environment *> locals;
+
 
     std::shared_ptr<ClassLiteral> instance{nullptr};
     std::shared_ptr<Literal> NIL{nullptr};

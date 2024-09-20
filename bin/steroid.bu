@@ -1,0 +1,609 @@
+
+var SCREEN_WIDTH  =  1024;
+var SCREEN_HEIGHT = 720;
+
+
+var maxX=1000;
+var maxY=700;
+
+var minX=24;
+var minY=24;
+var gravity =0.05;
+
+var node_id=0;
+
+def circle_collide(a,b)
+{
+    var collision = false;
+
+    var dx = b.x - a.x;      
+    var dy = b.y - a.y;      
+
+    var distance = Sqr(dx*dx + dy*dy); 
+
+    if (distance <= (a.radius + b.radius)) 
+        collision = true;
+
+    return collision;
+}
+
+
+class Mask
+{
+    var type=0;
+    var x=0;
+    var y=0;
+
+    def init(x,y)
+    {
+        self.x=x;
+        self.y=y;
+    }
+    def render()
+    {
+
+    }
+    def collide(other)
+    {
+        if (type==1)
+        {
+            if(other.type==1)
+            {
+                return circle_collide(self,other);
+            }
+            
+
+        }
+        return false;
+    }
+};
+
+class CircleMask : Mask 
+{
+    var radius=0;
+    def init(x,y,r)
+    {  
+        super.init(x,y);
+        radius = r;
+        type=1;
+    }
+    def render()
+    {
+        DrawCircle(x,y,radius);
+    }
+};
+
+class RectMask : Mask 
+{
+    var width =1;
+    var height=1;
+    def init(x,y,w,h)
+    {
+        super.init(x,y);
+        type=2;
+        width=w;
+        height=h;
+    }
+    def render()
+    {
+        DrawRect(x,y,width,height);
+    }
+};
+
+
+class Node
+{
+    var x   = 0;
+    var y   = 0;
+    var angle=0;
+    var id  = 0;
+    var tag = "node";
+    var done=false;
+    var life=0;
+    var mask=Mask(0,0);
+
+
+
+    def init(x,y)
+    {
+        self.x=x;
+        self.y=y;
+        self.id = node_id++;
+    }
+    def update(dt)
+    {
+       
+    }
+    def kill()
+    {
+        done=true;
+    }
+    def render()
+    {
+        DrawCircle(self.x,self.y,10);
+    }
+    def collision(with)
+    {
+
+    }
+    def collide(with)
+    {
+        return mask.collide(with.mask);
+    }
+
+    def place_meeting(x,y,tag)
+    {
+
+    }
+};
+
+class Steroid : Node 
+{
+    var type=0;
+    var image =0;
+    var rotation=0;
+    var speed=0;
+    def init(x,y,_type)
+    {
+      super.init(x,y);
+
+      self.type=_type;
+      tag  = "Steroid";
+      speed = Random(2,4);
+      rotation=Random(5,15);
+      life =1;
+      angle =  Random(0,360) * DEG;
+      totalSteroids = totalSteroids +1;
+
+
+        if (type==0)
+        {
+            mask = CircleMask(x,y,18);
+            image=2;
+        }
+
+        if (type==1)
+        {
+            mask = CircleMask(x,y,12);
+            image=3;
+        } 
+        
+        if(type==2)
+        {
+            mask = CircleMask(x,y,8);
+            image=4;
+        }
+      
+    }
+
+    def kill()
+    {
+        super.kill();
+        totalSteroids = totalSteroids-1;
+    }
+    def update(dt)
+    {
+          if (life<=0)
+          {
+             kill(); 
+          }
+
+
+        if (type==0)
+            rotation +=1;
+        elif(type==1)
+            rotation +=1.8;
+        else 
+            rotation +=2;
+
+
+
+        x += GetDistX(angle,speed) ;
+        y += GetDistY(angle,speed) ;
+        
+
+        if (x >SCREEN_WIDTH+15)
+        {
+            x-=SCREEN_WIDTH-32;
+        } 
+        
+        if(x<=-15)
+        {
+            x+=SCREEN_WIDTH+32;
+        }
+
+
+        if (y >SCREEN_HEIGHT+15)
+        {
+            y-=SCREEN_HEIGHT-32;
+        } 
+        
+        if(y<=-15)
+        {
+            y+= SCREEN_HEIGHT+32;
+        }
+      
+        mask.x=x;
+        mask.y=y;
+    }
+
+     def collision(with)
+    {
+       
+
+    }
+
+    def render()
+    {
+        mask.render();
+
+        SetImageRotation(image,rotation);
+        DrawImage(image,x,y);
+
+        
+    }
+};
+
+class Bullet : Node 
+{
+     def init(x,y,angle)
+    {
+      super.init(x,y);
+      mask = CircleMask(x,y,10);
+      tag = "bullet";
+      self.angle=angle;
+      life=1;
+
+    }
+    def update(dt)
+    {
+
+
+
+          life-= (0.8 * dt) ;
+          if (life<=0)
+             kill(); 
+
+   
+            x += GetDistX(angle,12) ;
+            y += GetDistY(angle,12) ;
+        
+
+        if (x >SCREEN_WIDTH+15)
+        {
+            x-=SCREEN_WIDTH-32;
+        } 
+        
+        if(x<=-15)
+        {
+            x+=SCREEN_WIDTH+32;
+        }
+
+
+        if (y >SCREEN_HEIGHT+15)
+        {
+            y-=SCREEN_HEIGHT-32;
+        } 
+        
+        if(y<=-15)
+        {
+            y+= SCREEN_HEIGHT+32;
+        }
+      
+        mask.x=x;
+        mask.y=y;
+
+        if (scene.place_meeting(self,"Steroid"))
+        {
+          
+        }
+    }
+
+    def collision(with)
+    {
+        kill();
+        if (with.type==0)
+        {
+            var s0 = Steroid(x,y,1);
+            scene.add(s0);
+            var s1 = Steroid(x,y,1);
+            scene.add(s1);
+
+        } else 
+        if(with.type==1)
+        {
+            var s0 = Steroid(x,y,2);
+            scene.add(s0);
+            var s1 = Steroid(x,y,2);
+            scene.add(s1);
+            var s2 = Steroid(x,y,2);
+            scene.add(s2);
+        }
+        with.kill();
+
+    }
+
+    def render()
+    {
+        //mask.render();
+
+        SetImageRotation(1,angle);
+        DrawImage(1,x,y);
+
+        
+    }
+};
+
+class Player : Node 
+{
+    var shotCooldown=0.2;
+    var shotTimer=0;
+
+    def init(x,y)
+    {
+      super.init(x,y);
+      mask = CircleMask(x,y,20);
+      tag = "player";
+    }
+    def update(dt)
+    {
+
+        shotTimer = shotTimer +dt;
+
+          
+
+        if (KeyDown(KEY_A) or KeyDown(KEY_LEFT) )
+        {
+            angle-=PI;
+
+        }elif(KeyDown(KEY_D) or KeyDown(KEY_RIGHT))
+        {
+            angle += PI;
+        }
+
+        if (KeyDown(KEY_W) or KeyDown(KEY_UP))
+        {
+            x += GetDistX(angle,8) ;
+            y += GetDistY(angle,8) ;
+        }
+
+        if (x >SCREEN_WIDTH+15)
+        {
+            x-=SCREEN_WIDTH-32;
+        } 
+        
+        if(x<=-15)
+        {
+            x+=SCREEN_WIDTH+32;
+        }
+
+
+        if (y >SCREEN_HEIGHT+15)
+        {
+            y-=SCREEN_HEIGHT-32;
+        } 
+        
+        if(y<=-15)
+        {
+            y+= SCREEN_HEIGHT+32;
+        }
+
+          if (KeyDown(KEY_SPACE) and shotTimer >= shotCooldown)
+            {
+                var bullet = Bullet(x,y,angle);
+                scene.add(bullet);
+                shotTimer=0;
+
+
+            }
+
+      
+        mask.x=x;
+        mask.y=y;
+    }
+
+     def collision(with)
+    {
+       
+
+    }
+
+    def render()
+    {
+     //   mask.render();
+
+        SetImageRotation(0,angle);
+        DrawImage(0,x,y);
+
+        
+    }
+
+  
+};
+
+class Scene 
+{
+    var lista[];
+    var count=0;
+
+    def update(dt)
+    {
+        var i=0;
+        count = lista.size();
+        while(i<count)
+        {
+            var n = lista.at(i);
+            if (n.done)
+            {
+                lista.remove(i);
+                count=lista.size();
+                i--;
+            }
+        
+            n.update(dt);
+            n.render();
+            i++;
+        }
+        DrawText(20,SCREEN_HEIGHT-30,22,"Total:",string.asInt(count));
+    }
+    def add(n)
+    {
+
+        lista.push(n);
+    }
+    def clear()
+    {
+        lista.clear();
+    }
+    def total()
+    {
+        return lista.size();
+    }
+
+    def place_meeting(a,tag)
+    {
+
+        var count = lista.size();
+        if (count==0) return false;
+        var i =  0;
+        while(i<count)
+        {
+                var b = lista.at(i);
+                if (b.tag==tag)
+                {
+                    if (a.collide(b))
+                    {
+                        a.collision(b);
+                        return true;
+                    }
+                    if (b.collide(a))
+                    {
+                        b.collision(a);
+                        return true;
+                    }
+                }
+            i= i + 1;
+        }
+        return false;    
+    }
+    def collisions()
+    {
+
+        var count = lista.size();
+        if (count==0) return false;
+        var i=  0;
+        var j = 0;
+        while(i<count)
+        {
+            
+          
+            var a = lista.at(i);
+            j= i + 1;    
+            while(j<count)
+            {
+                var b = lista.at(j);
+               // if (a.id==b.id) continue;
+                if (a.collide(b))
+                {
+                    a.collision(b);
+                    return true;
+                }
+                if (b.collide(a))
+                {
+                    b.collision(a);
+                    return true;
+                }
+                j= j+ 1;
+            }
+            i= i + 1;
+        }
+        return false;
+    }
+};
+
+
+CreateWindow(SCREEN_WIDTH,SCREEN_HEIGHT,"Steroids");
+SetTargetFPS(60);
+InitAudio();
+
+
+
+LoadImage("assets/images/001.png");//player 0
+LoadImage("assets/images/002.png");//bullt 1
+LoadImage("assets/images/003.png");//steroid big 2
+LoadImage("assets/images/004.png");//steroid small 3
+LoadImage("assets/images/005.png");//steroid tiny 4
+
+LoadImage("assets/images/007.png");//player part 5
+LoadImage("assets/images/008.png");
+LoadImage("assets/images/009.png");
+
+
+var scene = Scene();
+
+Seed(87645);
+
+
+var player = Player(200,200);
+scene.add(player);
+
+
+var steroidTimer=0;
+var steroidsCooldown=3.0;
+var totalSteroids=0;
+
+
+loop
+{
+
+    var deltaTime=GetFrameTime();   
+    var time = GetTime();
+    var done = WindowShouldClose();
+
+
+      steroidTimer += deltaTime;
+
+
+            if (totalSteroids<=4)
+            {
+                 if (steroidTimer>=steroidsCooldown)
+                 {
+                    steroidTimer=0;
+                    var s = Steroid(0,0,0);
+                    scene.add(s);
+                 }
+            }
+
+  
+
+
+    Clear();
+    
+    BeginDraw();
+
+
+
+
+    scene.update(deltaTime);
+    //scene.collisions();
+
+
+
+    EndDraw();
+
+
+
+
+    if (done  or  KeyDown(KEY_ESCAPE))
+        break;
+    
+    
+}
+
+
+
+
+
+
+print("by by");
+

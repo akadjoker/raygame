@@ -256,7 +256,7 @@ class GetDefinitionExpr : public Expr
 {
 public:
     GetDefinitionExpr() : Expr() { type = ExprType::GET_DEF; }
-    ~GetDefinitionExpr() { INFO("delete GetDefinitionExpr()"); }
+   // ~GetDefinitionExpr() { INFO("delete GetDefinitionExpr()"); }
     ExprPtr accept( Visitor &v) override;
     Token name;
     ExprPtr variable;
