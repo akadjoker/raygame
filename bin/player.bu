@@ -6,6 +6,9 @@ class Player : Node
     var hitTimer=0;
     var hitCooldown=0.6;
     var isHit=false;
+    var energia =100;
+    var lifes =4;
+    var rt=0;
 
 
     def init(x,y)
@@ -16,7 +19,7 @@ class Player : Node
     }
     def update(dt)
     {
-
+        rt = rt + (dt*100);
         shotTimer = shotTimer +dt;
         if (isHit==true)
         {
@@ -99,6 +102,14 @@ class Player : Node
     {
         isHit=true;
         hitTimer=0;
+        energia = energia -10;
+        if (energia<=0)
+        {
+            energia=100;
+            lifes = lifes-1;
+        }
+
+
 
         scene.add(Part(x,y,5));
         scene.add(Part(x,y,6));
@@ -114,11 +125,65 @@ class Player : Node
         {
             var blink = PingPong(time*90,0.9);
             SetImageAlpha(0,blink);
-        }
 
+
+        }
+        SetImageScale(0,1,1);
+        SetImageOrigin(0,32/2,20/2);
         SetImageRotation(0,angle);
         DrawImage(0,x,y);
 
+       
+        if (energia>=60)
+        {
+            DrawColor(0,1,0);
+        } elif( energia >=40 and energia <=50)
+        {
+             DrawColor(1,1,0);
+        } else 
+        {
+             DrawColor(1,0,0);
+        }
+       var width = (energia /  100) * 59;
+
+        DrawRect(x-29,y+30,width,9,true);
+        DrawColor(1,1,1);
+        DrawRect(x-30,y+30,60,10,false);
+
+
+        switch (lifes)
+        {
+            case 4:
+            {
+                SetImageOrigin(0,(32/2)*0.5,(20/2)*0.5);
+                SetImageScale(0,0.5,0.5);
+                SetImageRotation(0,rt);
+                DrawImage(0,30,50);
+                DrawImage(0,50,50);
+                DrawImage(0,70,50);
+            }
+             case 3:
+            {
+                SetImageOrigin(0,(32/2)*0.5,(20/2)*0.5);
+                SetImageScale(0,0.5,0.5);
+                SetImageRotation(0,rt);
+                DrawImage(0,30,50);
+                DrawImage(0,50,50);
+                
+            }
+             case 2:
+            {
+                SetImageOrigin(0,(32/2)*0.5,(20/2)*0.5);
+                SetImageScale(0,0.5,0.5);
+                SetImageRotation(0,rt);
+                DrawImage(0,30,50);
+                
+            }
+            case 1:
+            {
+                
+            }
+        }
         
     }
 
