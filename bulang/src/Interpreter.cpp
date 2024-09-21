@@ -49,7 +49,7 @@ ExprPtr Compiler::evaluate(ExprPtr node)
    
     if (!node)
     {
-        WARNING("Evaluation error: Unknown expression type");
+       // WARNING("Evaluation error: Unknown expression type");
         return NIL;;
     }
     std::shared_ptr<Expr>  result = visit(node);
@@ -66,11 +66,11 @@ ExprPtr Compiler::visit_call_native(CallExpr *node)
     {
          ExprPtr arg = evaluate(node->args[i]);
          Literal *l = static_cast<Literal *>(arg.get());
-         interpreter->context->add(std::move(arg),l);
+         interpreter->context->add(arg,l);
         
     }
     ExprPtr  result = interpreter->CallNativeFunction(node->name.lexeme,(int) node->args.size());
-
+    interpreter->context->clear();
     return result;
 
     
@@ -98,7 +98,7 @@ ExprPtr Compiler::visit_call_struct(const ExprPtr &var,CallExpr *node,Expr *expr
             {
                 ExprPtr arg = evaluate(node->args[index]);
                 std::string name = it->first;
-                result->members[name] = std::move(arg);
+                result->members[name] = arg;
             }
             index++;
         } 
@@ -125,9 +125,9 @@ ExprPtr Compiler::visit_call_function(CallExpr *node,Expr *callee)
     for (u32 i = 0; i < node->args.size(); i++)
     {
         ExprPtr arg = evaluate(node->args[i]);
-        local->define(function->args[i], std::move(arg));
+        local->define(function->args[i], arg);
     }
-    ExprPtr result = nullptr;
+    ExprPtr result = NIL;
     try  
     {
         BlockStmt *body = static_cast<BlockStmt *>(function->body.get());
@@ -138,13 +138,17 @@ ExprPtr Compiler::visit_call_function(CallExpr *node,Expr *callee)
     {
         result = e.value;
     }  
-    
-
-
-    if (result == nullptr)
+ 
+    catch(const std::exception& e)
     {
-        result = NIL;;
+        environment = previousEnvironment;
+        ERROR("Fail call  %s %s",  node->name.lexeme.c_str(), e.what());   
+      //  throw e;
+         throw FatalException(e.what());
+     
     }
+
+
 
     environment = previousEnvironment;
 
@@ -711,7 +715,7 @@ ExprPtr Compiler::visit_call_function_member(CallExpr *node,Expr *callee, ClassL
     
     environment = local.get();
 
-    ExprPtr result = nullptr;
+    ExprPtr result = NIL;
     try  
     {
         BlockStmt *body = static_cast<BlockStmt *>(function->body.get());
@@ -729,10 +733,6 @@ ExprPtr Compiler::visit_call_function_member(CallExpr *node,Expr *callee, ClassL
 
     environment = pref;    
 
-    if (result == nullptr)
-    {
-        result =  NIL;;
-    }
      return result;
 }
 
@@ -2252,26 +2252,26 @@ Interpreter::Interpreter()
 
 bool Interpreter::compile(const std::string &source)
 {
-    Lexer lexer;
-    lexer.initialize();
-    lexer.Load(source);
-    std::vector<Token> tokens =  lexer.GetTokens();
-    if (tokens.size() == 0)
-    {
-        return false;
-    }
-
-    // for (auto token : tokens)
+    // Lexer lexer;
+    // lexer.initialize();
+    // lexer.Load(source);
+    // std::vector<Token> tokens =  lexer.GetTokens();
+    // if (tokens.size() == 0)
     // {
-    //     INFO("Token: %s" ,token.toString().c_str());
+    //     return false;
     // }
+
+    // // for (auto token : tokens)
+    // // {
+    // //     INFO("Token: %s" ,token.toString().c_str());
+    // // }
 
     std::shared_ptr<Program> program=nullptr;
     Parser parser;
 
    
         
-        parser.Load(tokens);
+        parser.Load(source);
 
         program =  parser.parse();
        

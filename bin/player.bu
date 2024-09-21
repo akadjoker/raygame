@@ -1,0 +1,126 @@
+
+class Player : Node 
+{
+    var shotCooldown=0.2;
+    var shotTimer=0;
+    var hitTimer=0;
+    var hitCooldown=0.6;
+    var isHit=false;
+
+
+    def init(x,y)
+    {
+      super.init(x,y);
+      mask = CircleMask(x,y,20);
+      tag = "player";
+    }
+    def update(dt)
+    {
+
+        shotTimer = shotTimer +dt;
+        if (isHit==true)
+        {
+           hitTimer = hitTimer +dt;
+           if (hitTimer >= hitCooldown)
+           {
+            isHit=false;
+            SetImageAlpha(0,1);
+           } 
+            return;
+        }
+
+
+      
+          
+            if (KeyDown(KEY_A) or KeyDown(KEY_LEFT) )
+            {
+                angle-=PI;
+
+            }elif(KeyDown(KEY_D) or KeyDown(KEY_RIGHT))
+            {
+                angle += PI;
+            }
+
+            if (KeyDown(KEY_W) or KeyDown(KEY_UP))
+            {
+                x += GetDistX(angle,8) ;
+                y += GetDistY(angle,8) ;
+            }
+        
+
+        if (x >SCREEN_WIDTH+15)
+        {
+            x-=SCREEN_WIDTH-32;
+        } 
+        
+        if(x<=-15)
+        {
+            x+=SCREEN_WIDTH+32;
+        }
+
+
+        if (y >SCREEN_HEIGHT+15)
+        {
+            y-=SCREEN_HEIGHT-32;
+        } 
+        
+        if(y<=-15)
+        {
+            y+= SCREEN_HEIGHT+32;
+        }
+
+        if (KeyDown(KEY_SPACE) and shotTimer >= shotCooldown)
+        {
+            var bullet = Bullet(x,y,angle);
+            scene.add(bullet);
+            shotTimer=0;
+        }
+
+    
+        mask.x=x;
+        mask.y=y;
+
+        if (scene.collide(self,"Steroid"))
+        {
+          //process event
+        }
+    }
+
+    def collision(with)
+    {
+        if (with.tag=="Steroid")
+        {
+            hit();
+            with.hit();
+        }
+    }
+
+    def hit()
+    {
+        isHit=true;
+        hitTimer=0;
+
+        scene.add(Part(x,y,5));
+        scene.add(Part(x,y,6));
+        scene.add(Part(x,y,7));
+     
+    }
+
+    def render()
+    {
+     //   mask.render();
+
+        if (isHit)
+        {
+            var blink = PingPong(time*90,0.9);
+            SetImageAlpha(0,blink);
+        }
+
+        SetImageRotation(0,angle);
+        DrawImage(0,x,y);
+
+        
+    }
+
+  
+};

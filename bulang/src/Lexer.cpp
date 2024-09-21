@@ -412,6 +412,8 @@ void Lexer::initialize()
 
   keywords["struct"] = TokenType::STRUCT;
 
+  keywords["import"] = TokenType::IMPORT;
+
  // keywords["self"] = TokenType::SELF;
 
   //keywords["super"] = TokenType::SUPER;

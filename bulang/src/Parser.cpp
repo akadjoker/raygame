@@ -2,24 +2,33 @@
 #include "Parser.hpp"
 #include "Utils.hpp"
 #include "Interpreter.hpp"
-
+#include "Lexer.hpp"
 
 
 
 
 Parser::Parser()
 {
-
+    current = 0;
+    panicMode = false;
+    countBegins = 0;
+    countEnds = 0;
 }
 
     
-void Parser::Load( std::vector<Token> tokens)
+void Parser::Load( const std::string &source)
 {
-this->tokens = tokens;
-current = 0;
-panicMode = false;
-countBegins = 0;
-countEnds = 0;
+
+    Lexer lexer;
+    lexer.initialize();
+    if (lexer.Load(source))
+    {
+        if (lexer.ready())
+        {
+            tokens = lexer.GetTokens();
+        }
+    }
+
 }
 
 Parser::~Parser()
@@ -703,15 +712,22 @@ std::shared_ptr<Expr> Parser::now()
 
 std::shared_ptr<Program> Parser::program()
 {
+
+    current = 0;
+    panicMode = false;
+    countBegins = 0;
+    countEnds = 0;
+
+
     try 
     {
         
-    std::shared_ptr<Program> p =  std::make_shared<Program>();
+    currentProgram =  std::make_shared<Program>();
     while (!isAtEnd())
     {
-        p->statements.push_back(std::move(declarations()));
+        currentProgram->statements.push_back(std::move(declarations()));
     }
-    return p;
+    return currentProgram;
     }
     catch (const FatalException &e)
     {
@@ -719,6 +735,36 @@ std::shared_ptr<Program> Parser::program()
         return   nullptr;
     }
     return nullptr;
+}
+
+
+
+StmtPtr Parser::import_statemnt()
+{
+    Token name = consume(TokenType::IDENTIFIER, "Expect import name.");
+    consume(TokenType::SEMICOLON, "Expect ';' after import.");
+    std::shared_ptr<Importer> stmt =    std::make_shared<Importer>();
+    stmt->name = name;
+    Parser parser;
+
+    std::string filename= name.lexeme +".bu";
+
+     char* data = LoadTextFile(filename.c_str());
+    if (data != NULL)
+    {
+        std::string code = data;
+        FreeTextFile(data);
+        parser.Load(code);
+        std::shared_ptr<Program> program= parser.parse();
+
+        for (auto &s : program->statements)
+        {
+            currentProgram->statements.push_back(std::move(s));
+        }
+
+
+    }
+    return stmt;
 }
 
 std::shared_ptr<Stmt> Parser::expression_statement()
@@ -863,6 +909,7 @@ std::shared_ptr<Stmt> Parser::print_statement()
 //******************************************************************************************************************* */
 StmtPtr Parser::statement()
 {
+   
     if (match(TokenType::FUNCTION))
     {
         return function_declaration();
@@ -922,6 +969,11 @@ StmtPtr Parser::statement()
 
 StmtPtr Parser::declarations()
 {
+
+        if (match(TokenType::IMPORT))
+        {
+            return import_statemnt();
+        }
    
         if (match(TokenType::VAR))
         {

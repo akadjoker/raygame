@@ -1,3 +1,6 @@
+import collision;
+import engine;
+import player;
 
 var SCREEN_WIDTH  =  1024;
 var SCREEN_HEIGHT = 720;
@@ -12,130 +15,8 @@ var gravity =0.05;
 
 var node_id=0;
 
-def circle_collide(a,b)
-{
-    var collision = false;
-
-    var dx = b.x - a.x;      
-    var dy = b.y - a.y;      
-
-    var distance = Sqr(dx*dx + dy*dy); 
-
-    if (distance <= (a.radius + b.radius)) 
-        collision = true;
-
-    return collision;
-}
 
 
-class Mask
-{
-    var type=0;
-    var x=0;
-    var y=0;
-
-    def init(x,y)
-    {
-        self.x=x;
-        self.y=y;
-    }
-    def render()
-    {
-
-    }
-    def collide(other)
-    {
-        if (type==1)
-        {
-            if(other.type==1)
-            {
-                return circle_collide(self,other);
-            }
-            
-
-        }
-        return false;
-    }
-};
-
-class CircleMask : Mask 
-{
-    var radius=0;
-    def init(x,y,r)
-    {  
-        super.init(x,y);
-        radius = r;
-        type=1;
-    }
-    def render()
-    {
-        DrawCircle(x,y,radius);
-    }
-};
-
-class RectMask : Mask 
-{
-    var width =1;
-    var height=1;
-    def init(x,y,w,h)
-    {
-        super.init(x,y);
-        type=2;
-        width=w;
-        height=h;
-    }
-    def render()
-    {
-        DrawRect(x,y,width,height);
-    }
-};
-
-
-class Node
-{
-    var x   = 0;
-    var y   = 0;
-    var angle=0;
-    var id  = 0;
-    var tag = "node";
-    var done=false;
-    var life=0;
-    var mask=Mask(0,0);
-
-
-
-    def init(x,y)
-    {
-        self.x=x;
-        self.y=y;
-        self.id = node_id++;
-    }
-    def update(dt)
-    {
-       
-    }
-    def kill()
-    {
-        done=true;
-    }
-    def render()
-    {
-        DrawCircle(self.x,self.y,10);
-    }
-    def collision(with)
-    {
-
-    }
-    def collide(with)
-    {
-        return mask.collide(with.mask);
-    }
-
-    def place_meeting(x,y,tag)
-    {
-
-    }
-};
 
 class Steroid : Node 
 {
@@ -233,6 +114,23 @@ class Steroid : Node
 
     }
 
+    def hit()
+    {
+        if (type==0)
+        {
+            scene.add(Steroid(x,y,1));
+            scene.add(Steroid(x,y,1));
+
+        } elif(type==1)
+        {
+            
+            scene.add(Steroid(x,y,2));
+            scene.add(Steroid(x,y,2));
+            scene.add(Steroid(x,y,2));
+        }
+        kill();
+    }
+
     def render()
     {
         mask.render();
@@ -293,33 +191,16 @@ class Bullet : Node
         mask.x=x;
         mask.y=y;
 
-        if (scene.place_meeting(self,"Steroid"))
+        if (scene.collide(self,"Steroid"))
         {
-          
+          //process event
         }
     }
 
     def collision(with)
     {
         kill();
-        if (with.type==0)
-        {
-            var s0 = Steroid(x,y,1);
-            scene.add(s0);
-            var s1 = Steroid(x,y,1);
-            scene.add(s1);
-
-        } else 
-        if(with.type==1)
-        {
-            var s0 = Steroid(x,y,2);
-            scene.add(s0);
-            var s1 = Steroid(x,y,2);
-            scene.add(s1);
-            var s2 = Steroid(x,y,2);
-            scene.add(s2);
-        }
-        with.kill();
+        with.hit();
 
     }
 
@@ -334,193 +215,74 @@ class Bullet : Node
     }
 };
 
-class Player : Node 
+class Part : Node 
 {
-    var shotCooldown=0.2;
-    var shotTimer=0;
+    var type=0;
 
-    def init(x,y)
+    def init(x,y,type)
     {
       super.init(x,y);
-      mask = CircleMask(x,y,20);
-      tag = "player";
+      self.type=type;
+      angle=Random(0 ,360) * DEG;
+      life=1;
     }
+
     def update(dt)
     {
-
-        shotTimer = shotTimer +dt;
-
-          
-
-        if (KeyDown(KEY_A) or KeyDown(KEY_LEFT) )
-        {
-            angle-=PI;
-
-        }elif(KeyDown(KEY_D) or KeyDown(KEY_RIGHT))
-        {
-            angle += PI;
-        }
-
-        if (KeyDown(KEY_W) or KeyDown(KEY_UP))
-        {
-            x += GetDistX(angle,8) ;
-            y += GetDistY(angle,8) ;
-        }
-
-        if (x >SCREEN_WIDTH+15)
-        {
-            x-=SCREEN_WIDTH-32;
-        } 
-        
-        if(x<=-15)
-        {
-            x+=SCREEN_WIDTH+32;
-        }
-
-
-        if (y >SCREEN_HEIGHT+15)
-        {
-            y-=SCREEN_HEIGHT-32;
-        } 
-        
-        if(y<=-15)
-        {
-            y+= SCREEN_HEIGHT+32;
-        }
-
-          if (KeyDown(KEY_SPACE) and shotTimer >= shotCooldown)
-            {
-                var bullet = Bullet(x,y,angle);
-                scene.add(bullet);
-                shotTimer=0;
-
-
-            }
-
-      
-        mask.x=x;
-        mask.y=y;
-    }
-
-     def collision(with)
-    {
-       
+         life -=0.02; 
+         if (life<=0)
+         {
+            kill();
+         }
+         x += GetDistX(angle,2) ;
+         y += GetDistY(angle,2) ;   
 
     }
-
     def render()
     {
-     //   mask.render();
-
-        SetImageRotation(0,angle);
-        DrawImage(0,x,y);
-
-        
+        DrawImage(type,x,y);
     }
-
-  
 };
 
-class Scene 
+
+
+def create_steroid()
 {
-    var lista[];
-    var count=0;
+        var onde = Random(0,4);
+        var x=0;
+        var y=0;
 
-    def update(dt)
-    {
-        var i=0;
-        count = lista.size();
-        while(i<count)
+        switch(onde)
         {
-            var n = lista.at(i);
-            if (n.done)
+            case 0:
             {
-                lista.remove(i);
-                count=lista.size();
-                i--;
+                x = Random(-100,-50);
+                y = Random(0,720);
             }
-        
-            n.update(dt);
-            n.render();
-            i++;
-        }
-        DrawText(20,SCREEN_HEIGHT-30,22,"Total:",string.asInt(count));
-    }
-    def add(n)
-    {
-
-        lista.push(n);
-    }
-    def clear()
-    {
-        lista.clear();
-    }
-    def total()
-    {
-        return lista.size();
-    }
-
-    def place_meeting(a,tag)
-    {
-
-        var count = lista.size();
-        if (count==0) return false;
-        var i =  0;
-        while(i<count)
-        {
-                var b = lista.at(i);
-                if (b.tag==tag)
-                {
-                    if (a.collide(b))
-                    {
-                        a.collision(b);
-                        return true;
-                    }
-                    if (b.collide(a))
-                    {
-                        b.collision(a);
-                        return true;
-                    }
-                }
-            i= i + 1;
-        }
-        return false;    
-    }
-    def collisions()
-    {
-
-        var count = lista.size();
-        if (count==0) return false;
-        var i=  0;
-        var j = 0;
-        while(i<count)
-        {
-            
-          
-            var a = lista.at(i);
-            j= i + 1;    
-            while(j<count)
+            case 1:
             {
-                var b = lista.at(j);
-               // if (a.id==b.id) continue;
-                if (a.collide(b))
-                {
-                    a.collision(b);
-                    return true;
-                }
-                if (b.collide(a))
-                {
-                    b.collision(a);
-                    return true;
-                }
-                j= j+ 1;
+                x = Random(1024+50,1024+100);
+                y = Random(0,720);
             }
-            i= i + 1;
+            case 2:
+            {
+                x = Random(0,1024);
+                y = Random(-100,-50);
+            }
+            case 3:
+            {
+                x = Random(0,1024);
+                y = Random(720+50,720+100);
+            }
+            default:
+            {
+                x = Random(-1024,1024);
+                y = Random(-720,720);
+            }
         }
-        return false;
-    }
-};
-
+    var s = Steroid(x,y,0);
+    scene.add(s);
+}
 
 CreateWindow(SCREEN_WIDTH,SCREEN_HEIGHT,"Steroids");
 SetTargetFPS(60);
@@ -544,21 +306,31 @@ var scene = Scene();
 Seed(87645);
 
 
-var player = Player(200,200);
-scene.add(player);
+
+scene.add(Player(200,200));
 
 
 var steroidTimer=0;
 var steroidsCooldown=3.0;
 var totalSteroids=0;
+var time=0;
 
 
 loop
 {
 
     var deltaTime=GetFrameTime();   
-    var time = GetTime();
+    time = GetTime();
     var done = WindowShouldClose();
+
+    if (KeyPress(KEY_1))
+    {
+        scene.addAction(FadeIn(0.4,0));
+    }
+    if (KeyPress(KEY_2))
+    {
+        scene.addAction(FadeOut(0.4,0));
+    }
 
 
       steroidTimer += deltaTime;
@@ -568,9 +340,10 @@ loop
             {
                  if (steroidTimer>=steroidsCooldown)
                  {
+
+                    create_steroid();
                     steroidTimer=0;
-                    var s = Steroid(0,0,0);
-                    scene.add(s);
+                  
                  }
             }
 
@@ -585,8 +358,6 @@ loop
 
 
     scene.update(deltaTime);
-    //scene.collisions();
-
 
 
     EndDraw();

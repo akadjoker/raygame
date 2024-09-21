@@ -1,0 +1,77 @@
+def circle_collide(a,b)
+{
+    var collision = false;
+
+    var dx = b.x - a.x;      
+    var dy = b.y - a.y;      
+
+    var distance = Sqr(dx*dx + dy*dy); 
+
+    if (distance <= (a.radius + b.radius)) 
+    {
+        collision = true;
+    }
+    return collision;
+}
+
+class Mask
+{
+    var type=0;
+    var x=0;
+    var y=0;
+
+    def init(x,y)
+    {
+        self.x=x;
+        self.y=y;
+    }
+    def render()
+    {
+
+    }
+    def collide(other)
+    {
+        if (type==1)
+        {
+            if(other.type==1)
+            {
+                return circle_collide(self,other);
+            }
+            
+
+        }
+        return false;
+    }
+};
+
+class CircleMask : Mask 
+{
+    var radius=0;
+    def init(x,y,r)
+    {  
+        super.init(x,y);
+        radius = r;
+        type=1;
+    }
+    def render()
+    {
+        DrawCircle(x,y,radius);
+    }
+};
+
+class RectMask : Mask 
+{
+    var width =1;
+    var height=1;
+    def init(x,y,w,h)
+    {
+        super.init(x,y);
+        type=2;
+        width=w;
+        height=h;
+    }
+    def render()
+    {
+        DrawRect(x,y,width,height);
+    }
+};

@@ -19,28 +19,28 @@ void Core::clear()
     for (u32 i = 0; i < images.size(); i++)
     {
         CoreImage *image = images[i];
-        INFO("Core remove image [%d]" , image->id);
+      //  INFO("Core remove image [%d]" , image->id);
         UnloadTexture(image->texture);
         image->~CoreImage();
         arena.Free(image, sizeof(CoreImage));
     }
     for (CoreSound *sound : sounds)
     {
-        INFO("Core remove sound [%d]" , sound->id);
+       // INFO("Core remove sound [%d]" , sound->id);
         UnloadSound(sound->sound);
         sound->~CoreSound();
         arena.Free(sound, sizeof(CoreSound));
     }
     for (CoreMusic *music : musics)
     {
-        INFO("Core remove music [%d]" , music->id);
+       // INFO("Core remove music [%d]" , music->id);
         UnloadMusicStream(music->music);
         music->~CoreMusic();
         arena.Free(music, sizeof(CoreMusic));
     }
     for (CoreFont *font : fonts)
     {
-        INFO("Core remove font [%d]" , font->id);
+      //  INFO("Core remove font [%d]" , font->id);
         UnloadFont(font->font);
         font->~CoreFont();
         arena.Free(font, sizeof(CoreFont));

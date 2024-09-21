@@ -6,13 +6,14 @@
 #include "Expr.hpp"
 #include "Stmt.hpp"
 
+class Lexer;
 class Parser
 {
 public:
     Parser();
     ~Parser();
 
-    void Load( std::vector<Token> tokens);
+    void Load( const std::string &source);
 
         std::shared_ptr<Program>  parse();
 
@@ -27,7 +28,7 @@ private:
     int countBegins;
     int countEnds ;
 
-
+    std::shared_ptr<Program> currentProgram;
 
 
     bool match(const std::vector<TokenType> &types);
@@ -69,6 +70,7 @@ private:
     ExprPtr now();
 
     std::shared_ptr<Program> program();
+    StmtPtr import_statemnt();
 
     StmtPtr expression_statement();
     StmtPtr variable_declaration(bool inIntern=false);

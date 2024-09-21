@@ -140,3 +140,8 @@ u8 LoopStmt::visit(Visitor &v)
 {
    return v.visit_loop(this);
 }
+
+u8 Importer::visit(Visitor &v)
+{
+    return 0;
+}

@@ -1,0 +1,209 @@
+
+
+class Action
+{
+    var done=false;
+    var working=false;
+
+
+    def init()
+    {
+
+    }
+    def render()
+    {
+
+    }
+    def update(dt)
+    {
+
+    }
+    def complete()
+    {
+         done=true;   
+    }
+};
+
+class FadeIn: Action
+{
+    var time=0;
+    var speed=0.1;
+    var color=0;
+    def init(s,c)
+    {
+        speed= s;
+        color =c;
+    }
+    def render()
+    {
+        DrawColor(color,color,color);
+        DrawAlpha(time);
+        DrawRect(0,0,1024,720,true);
+    }
+    def update(dt)
+    {
+        time = time + (dt * speed);
+        if (time>=1)
+        {
+            complete();
+        }
+    }
+};
+class FadeOut: Action
+{
+    var time=1;
+    var speed=0.1;
+    var color=1;
+    def init(s,c)
+    {
+        speed= s;
+        color =c;
+    }
+    def render()
+    {
+        DrawColor(color,color,color);
+        DrawAlpha(time);
+        DrawRect(0,0,1024,720,true);
+    }
+    def update(dt)
+    {
+        time = time - (dt * speed);
+        if (time<=0)
+        {
+            complete();
+        }
+    }
+};
+
+class Node
+{
+    var x   = 0;
+    var y   = 0;
+    var angle=0;
+    var id  = 0;
+    var tag = "node";
+    var done=false;
+    var life=0;
+    var mask=Mask(0,0);
+
+
+
+    def init(x,y)
+    {
+        self.x=x;
+        self.y=y;
+        self.id = node_id++;
+    }
+    def update(dt)
+    {
+       
+    }
+    def kill()
+    {
+        done=true;
+    }
+    def render()
+    {
+        DrawCircle(self.x,self.y,10);
+    }
+    def collision(with)
+    {
+
+    }
+    def collide(with)
+    {
+        return mask.collide(with.mask);
+    }
+
+};
+
+
+class Scene 
+{
+    var lista[];
+    var actions[];
+    var count=0;
+    var steps=0;
+
+    def update(dt)
+    {
+        var i=0;
+        count = lista.size();
+        while(i<count)
+        {
+            var n = lista.at(i);
+            if (n.done)
+            {
+                lista.remove(i);
+                count=lista.size();
+                i--;
+            }
+        
+            n.update(dt);
+            n.render();
+            i++;
+        }
+        steps = actions.size();
+        i=0;
+        while(i<steps)
+        {
+            var n = actions.at(i);
+            if (n.done)
+            {
+                actions.remove(i);
+                steps=actions.size();
+                i--;
+            }
+            n.update(dt);
+            n.render();
+            i++;
+        }
+        DrawColor(1,1,1);
+        DrawAlpha(1);
+        
+        DrawText(20,SCREEN_HEIGHT-30,22,"Total:",string.asInt(count));
+    }
+    def add(n)
+    {
+        lista.push(n);
+    }
+    def addAction(a)
+    {
+        actions.push(a);
+    }
+    def clear()
+    {
+        lista.clear();
+    }
+    def total()
+    {
+        return lista.size();
+    }
+
+    def collide(a,tag)
+    {
+
+        var count = lista.size();
+        if (count==0) return false;
+        var i =  0;
+        while(i<count)
+        {
+                var b = lista.at(i);
+                if (b.tag==tag)
+                {
+                    if (a.collide(b))
+                    {
+                        a.collision(b);
+                        return true;
+                    }
+                    if (b.collide(a))
+                    {
+                        b.collision(a);
+                        return true;
+                    }
+                }
+            i= i + 1;
+        }
+        return false;    
+    }
+};

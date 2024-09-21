@@ -33,6 +33,7 @@ enum StmtType
     CLASS,
     ARRAY,
     MAP,
+    IMPORT,
     PROGRAM,
     S_COUNT,
 };
@@ -275,6 +276,7 @@ public:
 
 
 
+
 class Program : public Stmt
 {
 public:
@@ -283,4 +285,13 @@ public:
     u8 visit( Visitor &v) override;
 
     std::vector<StmtPtr> statements;
+};
+
+class Importer : public Stmt
+{
+public:
+    Importer() : Stmt() { type = StmtType::IMPORT; }
+    u8 visit( Visitor &v) override;
+    Token name;
+  //  std::shared_ptr<Program> program;
 };
