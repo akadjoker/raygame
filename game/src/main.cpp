@@ -1,9 +1,5 @@
 
 #include "pch.h" 
-#include "Utils.hpp" 
-#include "Interpreter.hpp" 
-#include "core.hpp" 
-
 
 #include <cstring>
 #include <cstddef>
@@ -18,6 +14,10 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
+#include "Utils.hpp" 
+#include "Interpreter.hpp" 
+#include "core.hpp" 
 
 void RegisterGraphics(Interpreter &interpreter);
 void RegisterInput(Interpreter &interpreter);

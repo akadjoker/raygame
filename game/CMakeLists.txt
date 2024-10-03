@@ -20,14 +20,14 @@ target_precompile_headers(bulang PRIVATE src/pch.h)
 if(CMAKE_BUILD_TYPE MATCHES Debug)
 
 if (UNIX)
-target_compile_options(main PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g  -D_DEBUG -DLINUX)
-target_link_options(main PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g  -D_DEBUG ) 
+target_compile_options(game PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g  -D_DEBUG -DLINUX)
+target_link_options(game PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g  -D_DEBUG ) 
 endif()
 
 
 elseif(CMAKE_BUILD_TYPE MATCHES Release)
-    target_compile_options(main PRIVATE -O3   -DNDEBUG )
-    target_link_options(main PRIVATE -O3   -DNDEBUG )
+    target_compile_options(game PRIVATE -O3   -DNDEBUG )
+    target_link_options(game PRIVATE -O3   -DNDEBUG )
 endif()
 
 target_link_libraries(game bulang raylib)
