@@ -111,7 +111,16 @@ int main()
 {
 
 
-    std::string code = readFile("steroid.bu");
+     std::string code;
+   
+   #if defined(_WIN32)
+        ChangeDirectory("../");
+       //code= readFile("../game.bu");
+   #else
+       
+   #endif
+   
+   code= readFile("game.bu");
     if (code.length() == 0)
     {
         return 0;

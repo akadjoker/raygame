@@ -48,10 +48,20 @@ int main()
 
    // Lexer lexer;
 
-    std::string code = readFile("main.pc");
-    if (code.length() == 0)
-    {
-        return 0;
+   std::string code;
+   
+   #if defined(_WIN32)
+       code= readFile("../main.bu");
+
+   #else
+       code= readFile("main.bu");
+   #endif
+   
+   
+
+   if (code.length() == 0)
+   {
+       return 0;
     } 
 
     Interpreter interpreter;

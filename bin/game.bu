@@ -133,7 +133,7 @@ class Steroid : Node
 
     def render()
     {
-        mask.render();
+     //   mask.render();
 
         SetImageRotation(image,rotation);
         DrawImage(image,x,y);

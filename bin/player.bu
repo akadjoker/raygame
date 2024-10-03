@@ -121,8 +121,27 @@ class Player : Node
     {
      //   mask.render();
 
+        SetImageAlpha(0,1);
+
         if (isHit)
         {
+
+                if (energia>=60)
+                {
+                    DrawColor(0,1,0);
+                } elif( energia >=40 and energia <=50)
+                {
+                    DrawColor(1,1,0);
+                } else 
+                {
+                    DrawColor(1,0,0);
+                }
+                 var width = (energia /  100) * 59;
+
+                DrawRect(x-29,y+30,width,9,true);
+                DrawColor(1,1,1);
+                DrawRect(x-30,y+30,60,10,false);
+
             var blink = PingPong(time*90,0.9);
             SetImageAlpha(0,blink);
 
@@ -132,24 +151,10 @@ class Player : Node
         SetImageOrigin(0,32/2,20/2);
         SetImageRotation(0,angle);
         DrawImage(0,x,y);
+        SetImageAlpha(0,1);
 
        
-        if (energia>=60)
-        {
-            DrawColor(0,1,0);
-        } elif( energia >=40 and energia <=50)
-        {
-             DrawColor(1,1,0);
-        } else 
-        {
-             DrawColor(1,0,0);
-        }
-       var width = (energia /  100) * 59;
-
-        DrawRect(x-29,y+30,width,9,true);
-        DrawColor(1,1,1);
-        DrawRect(x-30,y+30,60,10,false);
-
+       
 
         switch (lifes)
         {
@@ -181,7 +186,7 @@ class Player : Node
             }
             case 1:
             {
-                
+
             }
         }
         
